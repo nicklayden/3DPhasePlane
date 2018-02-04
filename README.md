@@ -24,4 +24,7 @@ Check that you have OpenGL libraries:
 ```
     sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev
 ```
-
+Compile with:
+```
+    g++ minimal-cplane.cpp -lGL -lGLU -lGLEW -lglut -lsfml-graphics -lsfml-system -lsfml-window -lboost_program_options -O3 -o plane
+```
