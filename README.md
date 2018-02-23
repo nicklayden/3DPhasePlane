@@ -24,6 +24,8 @@ Check that you have OpenGL libraries:
 ```
     sudo apt-get install libgl1-mesa-dev libglu1-mesa-dev freeglut3-dev
 ```
+
+## Compiling and Running the Program
 Compile with:
 ```
     make
