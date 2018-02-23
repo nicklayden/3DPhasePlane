@@ -26,5 +26,9 @@ Check that you have OpenGL libraries:
 ```
 Compile with:
 ```
-    g++ minimal-cplane.cpp -lGL -lGLU -lGLEW -lglut -lsfml-graphics -lsfml-system -lsfml-window -lboost_program_options -O3 -o plane
+    make
+```
+Run the program:
+```
+    ./run
 ```
