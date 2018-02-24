@@ -8,9 +8,7 @@
 
 
     There are a considerable number of optimizations to be done, so just compile with -O3
-
-
-    SCROLL DOWN 
+    
 */
 #include <GL/glut.h>
 #include <SFML/Graphics.hpp>
@@ -103,11 +101,11 @@ struct push_back_state_and_time
  * 
  * **************************************************************************/
 
-class dynamical_system
+class sean_problem
 {
 public:
     double m_par;
-    dynamical_system(double par): m_par(par) {}
+    sean_problem(double par): m_par(par) {}
     // exponential potential with constant epsilon background
 
     void operator() (const std::vector<double>& xin, std::vector<double>& dxdt, const double /* t */) {
@@ -126,10 +124,19 @@ public:
         // dxdt[0] = -3*x + 3*x*x - m_par*y*(1/(sqrt(x*x + y*y)));
         // dxdt[1] = m_par*x*(1/(sqrt(x*x + y*y)));
         // dxdt[2] = 0;
+
         // Harmonic potential equations.
-        dxdt[0] = -3*x - z*y - x*(y*y - 2*x*x - 1);
-        dxdt[1] = z*x - y*(y*y - 2*x*x - 1);
-        dxdt[2] = z*(2*x*x - y*x + 1);
+        // dxdt[0] = -3*x - z*y - x*(y*y - 2*x*x - 1);
+        // dxdt[1] = z*x - y*(y*y - 2*x*x - 1);
+        // dxdt[2] = z*(2*x*x - y*x + 1);
+        double chi; double m = m_par;
+        chi = -(1./3.)*z*z - (2./3.)*x*x + (1./3.)*y*y;
+        // pick m = 25 to do numerics.
+        // Alans suggested equations for harmonic potential
+        dxdt[0] = -z*x - sqrt(1 - z*z)*m*y - x*z*chi;
+        dxdt[1] = m*x*sqrt(1 - z*z) - z*y*chi;
+        dxdt[2] = (1 - z*z)*chi;
+
 
 
         //lorenz
@@ -176,35 +183,48 @@ int main(int argc, char** argv ){
  * **************************************************************************/
 
     std::vector<double> xt,yt,zt;
-    xt.push_back(1/sqrt(2));
-    yt.push_back(1/sqrt(2));
-    zt.push_back(0.);
+    // xt.push_back(1/sqrt(2));
+    // yt.push_back(1/sqrt(2));
+    // zt.push_back(0.);
 
-    xt.push_back(-1/sqrt(2));
-    yt.push_back(1/sqrt(2));
-    zt.push_back(0.);
+    // xt.push_back(-1/sqrt(2));
+    // yt.push_back(1/sqrt(2));
+    // zt.push_back(0.);
+    // xt.push_back(1); // this looks like an eq point for the harmonic potential
+    // yt.push_back(1);
+    // zt.push_back(sqrt(2));
+
+
+    xt.push_back(-sqrt(2)/4);
+    yt.push_back(-sqrt(2)/4);
+    zt.push_back(1./2.);
+
+    xt.push_back(sqrt(2)/4);
+    yt.push_back(-sqrt(2)/4);
+    zt.push_back(1./2.);
     
-    xt.push_back(-1/sqrt(2));
-    yt.push_back(1/sqrt(2));
-    zt.push_back(1);
-
-    xt.push_back(1/sqrt(2));
-    yt.push_back(1/sqrt(2));
-    zt.push_back(1);
-
-
     xt.push_back(0);
-    yt.push_back(1);
-    zt.push_back(1e-5);
-
-    xt.push_back(1);
     yt.push_back(0);
     zt.push_back(1e-5);
+
+
+    xt.push_back(sqrt(2)/8);
+    yt.push_back(-sqrt(2)/8);
+    zt.push_back(1./2.);
+
+
+    // xt.push_back(0);
+    // yt.push_back(1);
+    // zt.push_back(1e-5);
+
+    // xt.push_back(1);
+    // yt.push_back(0);
+    // zt.push_back(1e-5);
     
 
-    xt.push_back(-1);
-    yt.push_back(0);
-    zt.push_back(1e-5);
+    // xt.push_back(-1);
+    // yt.push_back(0);
+    // zt.push_back(1e-5);
     
 
 
@@ -295,17 +315,18 @@ int main(int argc, char** argv ){
         ycirc.push_back(sin(th));
     }
 
-    glutInit(&argc, argv);
-
+    // glutInit(&argc, argv);
+    bool running = true; // This is used so that the loop can end and opengl frees resources properly!!
     // SFML main window instance. Drawing handled in pure opengl context.
-    while (mainwin.isOpen()) {
+    while (running) {
         for (int q = 0; q < 250; q++) {
 
             // Handle events through the SFML interface for the window. (keyboard press, closing, etc.)
             sf::Event event;
             while (mainwin.pollEvent(event)) {
                 if (event.type == sf::Event::Closed) {
-                    mainwin.close();
+                    // mainwin.close();
+                    running = false;
                 }
                 if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Up)){
 				    rotspeed += 1;
@@ -392,13 +413,13 @@ int main(int argc, char** argv ){
             // numerical solutions...
             double ystart = 0.01; // value for initial conditions. Will change to random seeded values later?
             double xp, yp, zp; // temporary variables for holding numbers. These are (probably) removed with -O3 optimization
-            lambda = 0.01*q; // scalar field parameter. can be fixed or change through the q loop. if fixed, q loop will be optimized away.
+            lambda = 25; // scalar field parameter. can be fixed or change through the q loop. if fixed, q loop will be optimized away.
     
             // Numerically solve and draw lines...
             for (int j = 0; j < xc.size(); j++) {
                 
                 // System to solve!
-                dynamical_system test(lambda); 
+                sean_problem test(lambda); 
 
 
 
@@ -406,21 +427,21 @@ int main(int argc, char** argv ){
                 // INITIAL CONDITIONS SET FROM VECTORS DEFINED ABOVE
                 // x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.5; // This line defines randomly generated initial conditions 
                 x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
-                boost::numeric::odeint::integrate_const(stepper,test, x, 0.,10.,0.01,push_back_state_and_time(y,t));
+                // boost::numeric::odeint::integrate_const(stepper,test, x, 0.,100.,0.01,push_back_state_and_time(y,t));
 
-                // DRAWS FORWARD SOLUTION
-                glBegin(GL_LINE_STRIP);
-                    for (int i = 0; i < y.size(); i++) {
-                        xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
-                        glColor3f(0.4,0,0.8);
-                        glVertex3f(xp, yp, zp);
-                    }
-                glEnd();
-                y.clear(); t.clear();
+                // // DRAWS FORWARD SOLUTION
+                // glBegin(GL_LINE_STRIP);
+                //     for (int i = 0; i < y.size(); i++) {
+                //         xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
+                //         glColor3f(0.4,0,0.8);
+                //         glVertex3f(xp, yp, zp);
+                //     }
+                // glEnd();
+                // y.clear(); t.clear();
 
 
                 // DRAWS BACKWARD SOLUTION
-                boost::numeric::odeint::integrate_const(stepper,test, x, 10.,0.,-0.01,push_back_state_and_time(y,t));
+                boost::numeric::odeint::integrate_const(stepper,test, x, 0.,-100.,-0.01,push_back_state_and_time(y,t));
                 
                 // Draw solution curves in 3D phase space.
                 glBegin(GL_LINE_STRIP);
