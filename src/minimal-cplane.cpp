@@ -319,7 +319,7 @@ int main(int argc, char** argv ){
     bool running = true; // This is used so that the loop can end and opengl frees resources properly!!
     // SFML main window instance. Drawing handled in pure opengl context.
     while (running) {
-        for (int q = 0; q < 250; q++) {
+        // for (int q = 0; q < 250; q++) {
 
             // Handle events through the SFML interface for the window. (keyboard press, closing, etc.)
             sf::Event event;
@@ -328,10 +328,10 @@ int main(int argc, char** argv ){
                     // mainwin.close();
                     running = false;
                 }
-                if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Up)){
+                if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Right)){
 				    rotspeed += 1;
 			    }
-                if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Down)){
+                if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Left)){
 				    rotspeed -= 1;
 			    }
                 
@@ -384,6 +384,14 @@ int main(int argc, char** argv ){
                     gluPerspective(gui_fovy, new_aspect, gui_znear, gui_zfar);
                     glMatrixMode(GL_MODELVIEW);
                 }
+                if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Up)){
+				    gui_camera_dist -= 0.2; // toggle continuous rotation in z
+			    }
+                if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Down)){
+				    gui_camera_dist += 0.2; // toggle continuous rotation in z
+			    }
+
+
             } // event loop
 
             // clear window to prepare for drawing. fill window background with default color (defined above)
@@ -427,17 +435,17 @@ int main(int argc, char** argv ){
                 // INITIAL CONDITIONS SET FROM VECTORS DEFINED ABOVE
                 // x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.5; // This line defines randomly generated initial conditions 
                 x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
-                // boost::numeric::odeint::integrate_const(stepper,test, x, 0.,100.,0.01,push_back_state_and_time(y,t));
+                boost::numeric::odeint::integrate_const(stepper,test, x, 0.,100.,0.01,push_back_state_and_time(y,t));
 
-                // // DRAWS FORWARD SOLUTION
-                // glBegin(GL_LINE_STRIP);
-                //     for (int i = 0; i < y.size(); i++) {
-                //         xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
-                //         glColor3f(0.4,0,0.8);
-                //         glVertex3f(xp, yp, zp);
-                //     }
-                // glEnd();
-                // y.clear(); t.clear();
+                // DRAWS FORWARD SOLUTION
+                glBegin(GL_LINE_STRIP);
+                    for (int i = 0; i < y.size(); i++) {
+                        xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
+                        glColor3f(0.4,0,0.8);
+                        glVertex3f(xp, yp, zp);
+                    }
+                glEnd();
+                y.clear(); t.clear();
 
 
                 // DRAWS BACKWARD SOLUTION
@@ -502,7 +510,7 @@ int main(int argc, char** argv ){
 
             // Display everything we've done to the SFML instance
             mainwin.display();
-        } // end q loop
+        // } // end q loop
     } // end display loop
 
 } // end main
