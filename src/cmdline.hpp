@@ -62,6 +62,7 @@ int config_mapping(int argc, char** argv, boost::program_options::variables_map&
 
     init.add_options()
         ("init.conds.radius", po::value<double>(), "Radius of circle to start initial condition")
+        ("init.conds.dr", po::value<double>(), "Thickness of annulus if specified.")
         ("init.conds.thetamax",po::value<double>(), "Maximum angle through which to start initial conditions")
         ("init.conds.xcenter",po::value<double>(), "Circle center in the x direction")
         ("init.conds.ycenter",po::value<double>(), "Circle center in the y direction")
@@ -82,7 +83,7 @@ int config_mapping(int argc, char** argv, boost::program_options::variables_map&
         ("gui.camera_dist",po::value<float>(), "distance of camera from origin");
 
 
-        
+
 
     // po::variables_map vm;
     try 

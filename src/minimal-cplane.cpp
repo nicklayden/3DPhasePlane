@@ -61,10 +61,10 @@ double generate_random_circle(std::vector<double>& xin, std::vector<double>& yin
 
 }
 
-double generate_random_annulus(std::vector<double>& xin, std::vector<double>& yin, double a, double b, double radius, double thetamax, int N) {
+double generate_random_annulus(std::vector<double>& xin, std::vector<double>& yin, double a, double b, double radius,double dr, double thetamax, int N) {
     double r, theta, xt, yt;
     for (int i=0; i < N; i++) {
-        r = random(0.,radius*radius);
+        r = random(radius, (radius+dr));
         theta = random(0.,thetamax);
         xt = sqrt(r)*cos(theta) + a;
         yt = sqrt(r)*sin(theta) + b;
@@ -246,7 +246,7 @@ int main(int argc, char** argv ){
 
     // Initial conditions, dynamical system settings, and gui settings for the window.
     int numinit;
-    double r, tmax, xcenter, ycenter, sysstep;
+    double r, dr, tmax, xcenter, ycenter, sysstep;
     float bkg_alpha, bkg_r, bkg_g, bkg_b, \
           gui_aspect, gui_zfar, gui_znear, \
           gui_fovy, gui_camera_dist;
@@ -263,6 +263,7 @@ int main(int argc, char** argv ){
     config_mapping(argc, argv, vm);
 
     r = vm["init.conds.radius"].as<double>();
+    dr = vm["init.conds.dr"].as<double>();
     tmax = vm["init.conds.thetamax"].as<double>();
     xcenter = vm["init.conds.xcenter"].as<double>();
     ycenter = vm["init.conds.ycenter"].as<double>();
@@ -282,8 +283,8 @@ int main(int argc, char** argv ){
 
 
     // Generate uniform random numbers in a circle centerd at a,b with radius r:
-    generate_random_circle(xc,yc,xcenter,ycenter,r,tmax,numinit);
-
+    // generate_random_circle(xc,yc,xcenter,ycenter,r,tmax,numinit);
+    generate_random_annulus(xc,yc,xcenter,ycenter,r,dr,tmax,numinit);
 
 
 
@@ -315,7 +316,7 @@ int main(int argc, char** argv ){
         ycirc.push_back(sin(th));
     }
 
-    // glutInit(&argc, argv);
+    glutInit(&argc, argv);
     bool running = true; // This is used so that the loop can end and opengl frees resources properly!!
     // SFML main window instance. Drawing handled in pure opengl context.
     while (running) {
@@ -433,8 +434,8 @@ int main(int argc, char** argv ){
 
                 //FORWARD TIME INTEGRATION.
                 // INITIAL CONDITIONS SET FROM VECTORS DEFINED ABOVE
-                // x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.99; // This line defines randomly generated initial conditions 
-                x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
+                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.1; // This line defines randomly generated initial conditions 
+                // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
                 boost::numeric::odeint::integrate_const(stepper,test, x, 0.,100.,0.01,push_back_state_and_time(y,t));
 
                 // DRAWS FORWARD SOLUTION
@@ -447,7 +448,9 @@ int main(int argc, char** argv ){
                 glEnd();
                 y.clear(); t.clear();
 
-                x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
+
+                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.1; // This line defines randomly generated initial conditions 
+                // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
                 // DRAWS BACKWARD SOLUTION
                 boost::numeric::odeint::integrate_const(stepper,test, x, 100.,0.,-0.01,push_back_state_and_time(y,t));
                 // Draw solution curves in 3D phase space.
@@ -461,7 +464,8 @@ int main(int argc, char** argv ){
 
                 glBegin(GL_POINTS);
                 glColor3f(1,0,0);
-                glVertex3f(xt[j],yt[j],zt[j]);
+                // glVertex3f(xt[j],yt[j],zt[j]);
+                glVertex3f(xc[j],yc[j],0.1);
                 glEnd();
 
                 // delete current solution curve to prepare for the next one...
@@ -469,10 +473,28 @@ int main(int argc, char** argv ){
 
             }
 
+            /****************************************************************************************
+             * 
+             *                      AXES AND POINT DRAWING
+             *  This section has no numerics. Only drawing xyz axes lines, and axes unit circles 
+             *  for reference in the diagram. Positive axes are shown with colours according to:
+             *      X-Axis : Red
+             *      Y-Axis : Green
+             *      Z-Axis : Blue
+             * **************************************************************************************/
+
+            glutWireCone(0,-1,100,100);
+
             // These three line loops are drawing the circles around the 3 axes just for perspective
             glBegin(GL_LINE_LOOP);
-                glColor3f(1,0,0);
                 for (int i = 0; i < xcirc.size(); i++) {
+                    // if (xcirc[i] > 0 && ycirc[i]>0)
+                    // {
+                    //     glColor3f(1,1,1);
+                    // } else 
+                    // {
+                        glColor3f(1,0,0);
+                    // }
                     glVertex3f(xcirc[i], ycirc[i], 0);
                 }
             glEnd();
@@ -489,6 +511,27 @@ int main(int argc, char** argv ){
                 }
             glEnd();
 
+            // DRAW AXES LINES
+            glBegin(GL_LINE_LOOP);
+                // X AXIS in positive direction.
+                glColor3f(1,0,0); // red
+                glVertex3f(0,0,0);
+                glVertex3f(1,0,0);
+            glEnd();
+
+            glBegin(GL_LINE_LOOP);
+            // Y AXIS in positive direction.
+                glColor3f(0,1,0); // green
+                glVertex3f(0,0,0);
+                glVertex3f(0,1,0);
+            glEnd();
+
+            glBegin(GL_LINE_LOOP);
+            // Z AXIS in positive direction.
+                glColor3f(0,0,1); // blue
+                glVertex3f(0,0,0);
+                glVertex3f(0,0,1);
+            glEnd();
 
             // DRAW EQUILIBRIUM POINTS
             // these floats are for the non trivial eq points.
@@ -497,13 +540,14 @@ int main(int argc, char** argv ){
             // float hepx = sqrt(6.)/(3.*lambda);
             // float hepz = 2./(sqrt(3.)*lambda); 
             glBegin(GL_POINTS);
-                // glColor3f(1,0,1);
-                // glVertex3f(0,0,0);
-                // glVertex3f(1,0,0);
-                // glVertex3f(-1,0,0);
-                // glVertex3f(0,1,0);
-                // glVertex3f(0,-1,0);
-                // glVertex3f(fepx,0,fepz);
+                // EQ points for the harmonic potential
+                glColor3f(0,0,0);
+                glVertex3f(0,0,0);
+                glVertex3f(1,0,1);
+                glVertex3f(-1,0,1);
+                glVertex3f(0,1,1);
+                glVertex3f(0,-1,1);
+                glVertex3f(0,0,1);
                 // glVertex3f(hepx,0,hepz);
             glEnd();
 
