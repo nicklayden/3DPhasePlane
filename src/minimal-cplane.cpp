@@ -168,8 +168,8 @@ int main(int argc, char** argv ){
     // y       : matrix containing solutions for all N coordinates
     // stepper : numerical method used to integrate the ODE
     std::vector<double> x(3);
-    std::vector<double> t, xc, yc, inflx, infly;
-    std::vector<std::vector<double> > y;
+    std::vector<double> t, xc, yc, inflx, infly, t2;
+    std::vector<std::vector<double> > y, y2;
     boost::numeric::odeint::runge_kutta_dopri5<std::vector<double> > stepper;
     // boost::numeric::odeint::adams_bashforth<4,std::vector<double> > stepper;
     // boost::numeric::odeint::euler<std::vector<double> > stepper;
@@ -199,18 +199,18 @@ int main(int argc, char** argv ){
     yt.push_back(-sqrt(2)/4);
     zt.push_back(1./2.);
 
-    xt.push_back(sqrt(2)/4);
-    yt.push_back(-sqrt(2)/4);
-    zt.push_back(1./2.);
+    // xt.push_back(sqrt(2)/4);
+    // yt.push_back(-sqrt(2)/4);
+    // zt.push_back(1./2.);
     
     xt.push_back(0);
     yt.push_back(0);
-    zt.push_back(1e-5);
+    zt.push_back(0);
 
 
-    xt.push_back(sqrt(2)/8);
-    yt.push_back(-sqrt(2)/8);
-    zt.push_back(1./2.);
+    // xt.push_back(sqrt(2)/8);
+    // yt.push_back(-sqrt(2)/8);
+    // zt.push_back(1./2.);
 
 
     // xt.push_back(0);
@@ -421,7 +421,7 @@ int main(int argc, char** argv ){
             // numerical solutions...
             double ystart = 0.01; // value for initial conditions. Will change to random seeded values later?
             double xp, yp, zp; // temporary variables for holding numbers. These are (probably) removed with -O3 optimization
-            lambda = 25; // scalar field parameter. can be fixed or change through the q loop. if fixed, q loop will be optimized away.
+            lambda = 2; // scalar field parameter. can be fixed or change through the q loop. if fixed, q loop will be optimized away.
     
             // Numerically solve and draw lines...
             for (int j = 0; j < xc.size(); j++) {
@@ -433,7 +433,7 @@ int main(int argc, char** argv ){
 
                 //FORWARD TIME INTEGRATION.
                 // INITIAL CONDITIONS SET FROM VECTORS DEFINED ABOVE
-                // x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.5; // This line defines randomly generated initial conditions 
+                // x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.99; // This line defines randomly generated initial conditions 
                 x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
                 boost::numeric::odeint::integrate_const(stepper,test, x, 0.,100.,0.01,push_back_state_and_time(y,t));
 
@@ -441,21 +441,20 @@ int main(int argc, char** argv ){
                 glBegin(GL_LINE_STRIP);
                     for (int i = 0; i < y.size(); i++) {
                         xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
-                        glColor3f(0.4,0,0.8);
+                        glColor3f(0.9,0.1,0.8);
                         glVertex3f(xp, yp, zp);
                     }
                 glEnd();
                 y.clear(); t.clear();
 
-
+                x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
                 // DRAWS BACKWARD SOLUTION
-                boost::numeric::odeint::integrate_const(stepper,test, x, 0.,-100.,-0.01,push_back_state_and_time(y,t));
-                
+                boost::numeric::odeint::integrate_const(stepper,test, x, 100.,0.,-0.01,push_back_state_and_time(y,t));
                 // Draw solution curves in 3D phase space.
                 glBegin(GL_LINE_STRIP);
                     for (int i = 0; i < y.size(); i++) {
                         xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
-                        glColor3f(0.4,0,0.8);
+                        glColor3f(0,1,0);
                         glVertex3f(xp, yp, zp);
                     }
                 glEnd();
