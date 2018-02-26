@@ -1,6 +1,11 @@
 # 3DPhasePlane
 Solve systems of ODEs and plot phase planes in up to 3 dimensions
 
+
+## Future updates necessary
+-   Solve system of equations outside of the window loop. Recalculating every curve every loop is a massive waste of resources...
+-   Define initial conditions in more than just the xy dimensions from the config file.
+
 ## Dependencies
 OpenGL
 SFML 

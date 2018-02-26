@@ -197,7 +197,7 @@ int main(int argc, char** argv ){
 
     xt.push_back(-sqrt(2)/4);
     yt.push_back(-sqrt(2)/4);
-    zt.push_back(1./2.);
+    zt.push_back(-1./2.);
 
     // xt.push_back(sqrt(2)/4);
     // yt.push_back(-sqrt(2)/4);
