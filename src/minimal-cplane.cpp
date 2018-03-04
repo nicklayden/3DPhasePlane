@@ -28,6 +28,11 @@
  
 
 #define PI 3.14159265
+void cpDraw_plane();
+inline double f(double x, double y) {
+    return sqrt((x*x*y*y)/(x*x + y*y));
+    // return y*sin(x) + y*cos(x);
+}
 
 inline double x_start(double y) {
     return sqrt(1 - y*y);
@@ -129,15 +134,19 @@ public:
         // dxdt[0] = -3*x - z*y - x*(y*y - 2*x*x - 1);
         // dxdt[1] = z*x - y*(y*y - 2*x*x - 1);
         // dxdt[2] = z*(2*x*x - y*x + 1);
-        double chi; double m = m_par;
-        chi = -(1./3.)*z*z - (2./3.)*x*x + (1./3.)*y*y;
+        // double chi; double m = m_par;
+        // chi = -(1./3.)*z*z - (2./3.)*x*x + (1./3.)*y*y;
         // pick m = 25 to do numerics.
         // Alans suggested equations for harmonic potential
-        dxdt[0] = -z*x - sqrt(1 - z*z)*m*y - x*z*chi;
-        dxdt[1] = m*x*sqrt(1 - z*z) - z*y*chi;
-        dxdt[2] = (1 - z*z)*chi;
+        // dxdt[0] = -z*x - sqrt(1 - z*z)*m*y - x*z*chi;
+        // dxdt[1] = m*x*sqrt(1 - z*z) - z*y*chi;
+        // dxdt[2] = (1 - z*z)*chi;
+        double q = x + 2*y*y - z*z;
+        dxdt[0] = x*(2*q-2);
+        dxdt[1] = y*(q-2) - (sqrt(6)/2.)*m_par*z*z;
+        dxdt[2] = z*(q + 1 + (sqrt(6)/2.)*m_par*y);
 
-
+        
 
         //lorenz
         // dxdt[0] = 10.*(y - x);
@@ -160,8 +169,12 @@ int main(int argc, char** argv ){
        #####################################################################################
     */
     // Create SFML window instance
-    sf::RenderWindow mainwin(sf::VideoMode(800,800), "NICE TITLE");
+
+    sf::ContextSettings settings;
+    settings.depthBits = 24; settings.majorVersion = 3; settings.minorVersion = 0;
+    sf::RenderWindow mainwin(sf::VideoMode(800,800), "NICE TITLE", sf::Style::Default, settings);
     sf::Clock Clock;
+
 
     // x       : state vector (holds x,y,z coordinates of system)
     // t       : stores time values of the solution. (for autonomous systems, isn't useful)
@@ -173,6 +186,26 @@ int main(int argc, char** argv ){
     boost::numeric::odeint::runge_kutta_dopri5<std::vector<double> > stepper;
     // boost::numeric::odeint::adams_bashforth<4,std::vector<double> > stepper;
     // boost::numeric::odeint::euler<std::vector<double> > stepper;
+
+    /*************************************
+     *  test plotting a custom surface.
+     *  need to define x and y meshgrid, and a function to plot.
+     *  in the form z=f(x,y)
+     * 
+     * Idea: Draw each line (slice) of the function per loop
+     *       to fill up the space.
+     * ***********************************/
+    std::vector<double> xs,ys,zs;
+    double temp, tstep, tm, tn;
+    temp = -5;
+    tm = 5;
+    tn = 100;
+    tstep = (tm-temp)/tn;
+    for (size_t i = 0; i < tn; i++)
+    {   
+        xs.push_back(temp + tstep*i);
+        ys.push_back(temp + tstep*i);
+    }
 
 
 /****************************************************************************
@@ -190,9 +223,9 @@ int main(int argc, char** argv ){
     // xt.push_back(-1/sqrt(2));
     // yt.push_back(1/sqrt(2));
     // zt.push_back(0.);
-    // xt.push_back(1); // this looks like an eq point for the harmonic potential
-    // yt.push_back(1);
-    // zt.push_back(sqrt(2));
+    xt.push_back(cos(0.01)); // this looks like an eq point for the harmonic potential
+    yt.push_back(0.01);
+    zt.push_back(0.999);
 
 
     xt.push_back(-sqrt(2)/4);
@@ -288,7 +321,7 @@ int main(int argc, char** argv ){
 
 
 
-
+    // GLfloat mat_specular[] = {1.0,1.0,1.0,1.0};
 
 
     // preparing opengl surface. defining default window color.
@@ -296,14 +329,21 @@ int main(int argc, char** argv ){
     glClearColor(bkg_r, bkg_g, bkg_b, bkg_alpha);
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
+    // glDepthFunc(GL_LESS);
     glEnable(GL_BLEND);
     glHint(GL_LINE_SMOOTH, GL_NICEST);
-
+    // OPENGL LIGHTING - For another time..
+    // glEnable(GL_LIGHTING);
+    // glEnable(GL_LIGHT0);
+    // glColorMaterial(GL_FRONT, GL_EMISSION);
+    // glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+    // glEnable(GL_COLOR_MATERIAL);
     // setup perspective projection and the cameras position:
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(gui_fovy, gui_aspect, gui_znear, gui_zfar); // fovy, aspect ratio, znear, zfar // objects farther than zfar or closer than znear will NOT be rendered.
     glPointSize(5); // size of point sprites on the window. default is 1 pixel.
+    glLineWidth(2);
     // glRotatef(90.,1.,0.,0.);
 
 
@@ -319,15 +359,17 @@ int main(int argc, char** argv ){
     glutInit(&argc, argv);
     bool running = true; // This is used so that the loop can end and opengl frees resources properly!!
     // SFML main window instance. Drawing handled in pure opengl context.
+    
     while (running) {
         // for (int q = 0; q < 250; q++) {
-
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             // Handle events through the SFML interface for the window. (keyboard press, closing, etc.)
             sf::Event event;
             while (mainwin.pollEvent(event)) {
                 if (event.type == sf::Event::Closed) {
                     // mainwin.close();
                     running = false;
+                    break;
                 }
                 if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Right)){
 				    rotspeed += 1;
@@ -396,7 +438,6 @@ int main(int argc, char** argv ){
             } // event loop
 
             // clear window to prepare for drawing. fill window background with default color (defined above)
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             glMatrixMode(GL_MODELVIEW);
             glLoadIdentity();
             glTranslatef(0.f,0.f,-gui_camera_dist);
@@ -422,7 +463,7 @@ int main(int argc, char** argv ){
             // numerical solutions...
             double ystart = 0.01; // value for initial conditions. Will change to random seeded values later?
             double xp, yp, zp; // temporary variables for holding numbers. These are (probably) removed with -O3 optimization
-            lambda = 2; // scalar field parameter. can be fixed or change through the q loop. if fixed, q loop will be optimized away.
+            lambda = 1; // scalar field parameter. can be fixed or change through the q loop. if fixed, q loop will be optimized away.
     
             // Numerically solve and draw lines...
             for (int j = 0; j < xc.size(); j++) {
@@ -434,7 +475,7 @@ int main(int argc, char** argv ){
 
                 //FORWARD TIME INTEGRATION.
                 // INITIAL CONDITIONS SET FROM VECTORS DEFINED ABOVE
-                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.1; // This line defines randomly generated initial conditions 
+                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.5; // This line defines randomly generated initial conditions 
                 // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
                 boost::numeric::odeint::integrate_const(stepper,test, x, 0.,100.,0.01,push_back_state_and_time(y,t));
 
@@ -449,7 +490,7 @@ int main(int argc, char** argv ){
                 y.clear(); t.clear();
 
 
-                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.1; // This line defines randomly generated initial conditions 
+                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.5; // This line defines randomly generated initial conditions 
                 // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
                 // DRAWS BACKWARD SOLUTION
                 boost::numeric::odeint::integrate_const(stepper,test, x, 100.,0.,-0.01,push_back_state_and_time(y,t));
@@ -463,15 +504,15 @@ int main(int argc, char** argv ){
                 glEnd();
 
                 glBegin(GL_POINTS);
-                glColor3f(1,0,0);
-                // glVertex3f(xt[j],yt[j],zt[j]);
-                glVertex3f(xc[j],yc[j],0.1);
+                    glColor3f(1,0,0);
+                    // glVertex3f(xt[j],yt[j],zt[j]);
+                    glVertex3f(xc[j],yc[j],0.5);
                 glEnd();
 
                 // delete current solution curve to prepare for the next one...
                 y.clear(); t.clear();
 
-            }
+            } // end j loop
 
             /****************************************************************************************
              * 
@@ -483,18 +524,13 @@ int main(int argc, char** argv ){
              *      Z-Axis : Blue
              * **************************************************************************************/
 
-            glutWireCone(0,-1,100,100);
+            // glutWireCone(0,-1,100,100);
 
+            // DRAW AXES CIRCLES
             // These three line loops are drawing the circles around the 3 axes just for perspective
             glBegin(GL_LINE_LOOP);
                 for (int i = 0; i < xcirc.size(); i++) {
-                    // if (xcirc[i] > 0 && ycirc[i]>0)
-                    // {
-                    //     glColor3f(1,1,1);
-                    // } else 
-                    // {
-                        glColor3f(1,0,0);
-                    // }
+                    glColor3f(1,0,0);
                     glVertex3f(xcirc[i], ycirc[i], 0);
                 }
             glEnd();
@@ -512,7 +548,7 @@ int main(int argc, char** argv ){
             glEnd();
 
             // DRAW AXES LINES
-            glBegin(GL_LINE_LOOP);
+            glBegin(GL_LINES);
                 // X AXIS in positive direction.
                 glColor3f(1,0,0); // red
                 glVertex3f(0,0,0);
@@ -539,21 +575,91 @@ int main(int argc, char** argv ){
             // float fepz = sqrt(1 - lambda*lambda/6.);
             // float hepx = sqrt(6.)/(3.*lambda);
             // float hepz = 2./(sqrt(3.)*lambda); 
-            glBegin(GL_POINTS);
-                // EQ points for the harmonic potential
-                glColor3f(0,0,0);
-                glVertex3f(0,0,0);
-                glVertex3f(1,0,1);
-                glVertex3f(-1,0,1);
-                glVertex3f(0,1,1);
-                glVertex3f(0,-1,1);
-                glVertex3f(0,0,1);
-                // glVertex3f(hepx,0,hepz);
-            glEnd();
+            // glBegin(GL_POINTS);
+            //     // EQ points for the harmonic potential
+            //     glColor3f(1,1,1);
+            //     glVertex3f(0,0,0);
+            //     glVertex3f(1,0,1);
+            //     glVertex3f(-1,0,1);
+            //     glVertex3f(0,1,1);
+            //     glVertex3f(0,-1,1);
+            //     glVertex3f(0,0,1);
+            //     // glVertex3f(hepx,0,hepz);
+            // glEnd();
+
+            /**********************
+             *  Draw surfaces for experiment.
+             *  needs a function z, and two arrays x,y that span the mesh.
+             * 
+             * 
+             * 
+             * ********************/
+
+            // glEnable(GL_DEPTH_TEST);
+                // glStencilFunc(GL_ALWAYS,1,0xFF);
+                // glStencilOp(GL_KEEP,GL_KEEP,GL_REPLACE);
+                // glStencilMask(0xFF);
+                // glDepthMask(GL_TRUE);
+                // glClear(GL_STENCIL_BUFFER_BIT);
+                // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+                // glBegin(GL_QUADS);
+                //     glColor4f(1,0,0,0.4);
+                //     glVertex3f(5,5,sqrt(2));
+                //     glVertex3f(5,-5,sqrt(2));
+                //     glVertex3f(-5,-5,sqrt(2));
+                //     glVertex3f(-5,5,sqrt(2));
+                // glEnd();
+                cpDraw_plane();
+                for (size_t i = 0; i < xs.size(); i++)
+                {
+                    glBegin(GL_LINE_STRIP);
+                    glColor4f(0,0,1,1);
+
+                    for (size_t j = 0; j < ys.size(); j++)
+                    {
+                        zs.push_back(f(xs[i],ys[j]));
+                        glVertex3f(xs[i],ys[j],zs[j]);
+                    }
+                    zs.clear();
+                    glEnd();
+                }
+
+                for (size_t i = 0; i < ys.size(); i++)
+                {
+                    glBegin(GL_LINE_STRIP);
+                    glColor4f(0,0,1,1);
+
+                    for (size_t j = 0; j < xs.size(); j++)
+                    {
+                        zs.push_back(f(xs[j],ys[i]));
+                        glVertex3f(xs[j],ys[i],zs[j]);
+                    }
+                    zs.clear();
+                    glEnd();
+                }
+
+    
+
+
 
             // Display everything we've done to the SFML instance
+            // This swaps the opengl buffer to sfml.
             mainwin.display();
         // } // end q loop
     } // end display loop
 
 } // end main
+
+// void plot_wireframe((float)f(float x, float y), std::vector<double>* x, std::vector<double>* y) {
+    // Take wireframe code in main loop and redefine it here.
+// } 
+
+void cpDraw_plane() {
+    glBegin(GL_QUADS);
+        glColor4f(1,0,0,0.4);
+        glVertex3f(5,5,sqrt(2));
+        glVertex3f(5,-5,sqrt(2));
+        glVertex3f(-5,-5,sqrt(2));
+        glVertex3f(-5,5,sqrt(2));
+    glEnd();
+}
