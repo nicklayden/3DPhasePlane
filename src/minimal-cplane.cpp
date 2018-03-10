@@ -29,9 +29,20 @@
 
 #define PI 3.14159265
 void cpDraw_plane();
-inline double f(double x, double y) {
+void cpDraw_Axes();
+void cpDraw_BoundingSphere();
+
+inline double f(double x, double y, double t) {
     return sqrt((x*x*y*y)/(x*x + y*y));
-    // return y*sin(x) + y*cos(x);
+    // return cos(y)*sin(x)*exp(-x*x);
+    // double r = x*x + y*y;
+    // double w,bx,by;
+    // bx = 3, by = 3;
+    // double byt = by*sin(t);
+    // double bxt = bx*cos(t); 
+    // double r2 = (x-bxt)*(x-bxt) + (y-byt)*(y-byt);
+    // return 1./r + 1e-2/r2;
+
 }
 
 inline double x_start(double y) {
@@ -109,8 +120,8 @@ struct push_back_state_and_time
 class sean_problem
 {
 public:
-    double m_par;
-    sean_problem(double par): m_par(par) {}
+    double m_par,k1,k2;
+    sean_problem(double par, double k1, double k2): m_par(par), k1(k1),k2(k2) {}
     // exponential potential with constant epsilon background
 
     void operator() (const std::vector<double>& xin, std::vector<double>& dxdt, const double /* t */) {
@@ -141,11 +152,18 @@ public:
         // dxdt[0] = -z*x - sqrt(1 - z*z)*m*y - x*z*chi;
         // dxdt[1] = m*x*sqrt(1 - z*z) - z*y*chi;
         // dxdt[2] = (1 - z*z)*chi;
-        double q = x + 2*y*y - z*z;
-        dxdt[0] = x*(2*q-2);
-        dxdt[1] = y*(q-2) - (sqrt(6)/2.)*m_par*z*z;
-        dxdt[2] = z*(q + 1 + (sqrt(6)/2.)*m_par*y);
+        // double q = x + 2*y*y - z*z;
+        // dxdt[0] = x*(2*q-2);
+        // dxdt[1] = y*(q-2) - (sqrt(6)/2.)*m_par*z*z;
+        // dxdt[2] = z*(q + 1 + (sqrt(6)/2.)*m_par*y);
 
+        double w = xin[3];
+        // TWO SCALAR FIELD PROBLEM - CAN ONLY PLOT PROJECTIONS
+        double q = 2*x*x + 2*y*y - z*z - w*w;
+        dxdt[0] = x*(q-2.) - c*k1*z*z;
+        dxdt[1] = y*(q-2) - c*k2*w*w;
+        dxdt[2] = z*(q + 1 + c*k1*x);
+        dxdt[3] = w*(q + 1 + c*k2*y);
         
 
         //lorenz
@@ -180,7 +198,7 @@ int main(int argc, char** argv ){
     // t       : stores time values of the solution. (for autonomous systems, isn't useful)
     // y       : matrix containing solutions for all N coordinates
     // stepper : numerical method used to integrate the ODE
-    std::vector<double> x(3);
+    std::vector<double> x(4);
     std::vector<double> t, xc, yc, inflx, infly, t2;
     std::vector<std::vector<double> > y, y2;
     boost::numeric::odeint::runge_kutta_dopri5<std::vector<double> > stepper;
@@ -197,9 +215,9 @@ int main(int argc, char** argv ){
      * ***********************************/
     std::vector<double> xs,ys,zs;
     double temp, tstep, tm, tn;
-    temp = -5;
-    tm = 5;
-    tn = 100;
+    temp = 0;
+    tm = 50;
+    tn = 101;
     tstep = (tm-temp)/tn;
     for (size_t i = 0; i < tn; i++)
     {   
@@ -348,18 +366,18 @@ int main(int argc, char** argv ){
 
 
     // Drawing circles around the axis for spatial reference.
-    std::vector<float> xcirc,ycirc;
-    float th;
-    for (int i = 0; i < 80; i++) {
-        th = 2.*PI*i/80.;
-        xcirc.push_back(cos(th));
-        ycirc.push_back(sin(th));
-    }
+    // std::vector<float> xcirc,ycirc;
+    // float th;
+    // for (int i = 0; i < 80; i++) {
+    //     th = 2.*PI*i/80.;
+    //     xcirc.push_back(cos(th));
+    //     ycirc.push_back(sin(th));
+    // }
 
     glutInit(&argc, argv);
     bool running = true; // This is used so that the loop can end and opengl frees resources properly!!
     // SFML main window instance. Drawing handled in pure opengl context.
-    
+    double time = 0.0;
     while (running) {
         // for (int q = 0; q < 250; q++) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -469,20 +487,20 @@ int main(int argc, char** argv ){
             for (int j = 0; j < xc.size(); j++) {
                 
                 // System to solve!
-                sean_problem test(lambda); 
+                sean_problem test(lambda,5.,5.); 
 
 
 
                 //FORWARD TIME INTEGRATION.
                 // INITIAL CONDITIONS SET FROM VECTORS DEFINED ABOVE
-                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.5; // This line defines randomly generated initial conditions 
+                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.5; x[3] = 0.1; // This line defines randomly generated initial conditions 
                 // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
                 boost::numeric::odeint::integrate_const(stepper,test, x, 0.,100.,0.01,push_back_state_and_time(y,t));
 
                 // DRAWS FORWARD SOLUTION
                 glBegin(GL_LINE_STRIP);
                     for (int i = 0; i < y.size(); i++) {
-                        xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
+                        xp = y[i][0]; yp = y[i][1]; zp = y[i][3]; //placeholders for readability
                         glColor3f(0.9,0.1,0.8);
                         glVertex3f(xp, yp, zp);
                     }
@@ -490,14 +508,14 @@ int main(int argc, char** argv ){
                 y.clear(); t.clear();
 
 
-                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.5; // This line defines randomly generated initial conditions 
+                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.5; x[3] = 0.1; // This line defines randomly generated initial conditions 
                 // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
                 // DRAWS BACKWARD SOLUTION
                 boost::numeric::odeint::integrate_const(stepper,test, x, 100.,0.,-0.01,push_back_state_and_time(y,t));
                 // Draw solution curves in 3D phase space.
                 glBegin(GL_LINE_STRIP);
                     for (int i = 0; i < y.size(); i++) {
-                        xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
+                        xp = y[i][0]; yp = y[i][1]; zp = y[i][3]; //placeholders for readability
                         glColor3f(0,1,0);
                         glVertex3f(xp, yp, zp);
                     }
@@ -506,7 +524,7 @@ int main(int argc, char** argv ){
                 glBegin(GL_POINTS);
                     glColor3f(1,0,0);
                     // glVertex3f(xt[j],yt[j],zt[j]);
-                    glVertex3f(xc[j],yc[j],0.5);
+                    glVertex3f(xc[j],yc[j],0.1);
                 glEnd();
 
                 // delete current solution curve to prepare for the next one...
@@ -524,69 +542,9 @@ int main(int argc, char** argv ){
              *      Z-Axis : Blue
              * **************************************************************************************/
 
-            // glutWireCone(0,-1,100,100);
-
-            // DRAW AXES CIRCLES
-            // These three line loops are drawing the circles around the 3 axes just for perspective
-            glBegin(GL_LINE_LOOP);
-                for (int i = 0; i < xcirc.size(); i++) {
-                    glColor3f(1,0,0);
-                    glVertex3f(xcirc[i], ycirc[i], 0);
-                }
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-                glColor3f(0,0.5,1);
-                for (int i = 0; i < xcirc.size(); i++) {
-                    glVertex3f(xcirc[i], 0, ycirc[i]);
-                }
-            glEnd();
-            glBegin(GL_LINE_LOOP);
-                glColor3f(1,0,1);
-                for (int i = 0; i < xcirc.size(); i++) {
-                    glVertex3f(0, xcirc[i], ycirc[i]);
-                }
-            glEnd();
-
-            // DRAW AXES LINES
-            glBegin(GL_LINES);
-                // X AXIS in positive direction.
-                glColor3f(1,0,0); // red
-                glVertex3f(0,0,0);
-                glVertex3f(1,0,0);
-            glEnd();
-
-            glBegin(GL_LINE_LOOP);
-            // Y AXIS in positive direction.
-                glColor3f(0,1,0); // green
-                glVertex3f(0,0,0);
-                glVertex3f(0,1,0);
-            glEnd();
-
-            glBegin(GL_LINE_LOOP);
-            // Z AXIS in positive direction.
-                glColor3f(0,0,1); // blue
-                glVertex3f(0,0,0);
-                glVertex3f(0,0,1);
-            glEnd();
-
-            // DRAW EQUILIBRIUM POINTS
-            // these floats are for the non trivial eq points.
-            // float fepx = lambda/sqrt(6.);
-            // float fepz = sqrt(1 - lambda*lambda/6.);
-            // float hepx = sqrt(6.)/(3.*lambda);
-            // float hepz = 2./(sqrt(3.)*lambda); 
-            // glBegin(GL_POINTS);
-            //     // EQ points for the harmonic potential
-            //     glColor3f(1,1,1);
-            //     glVertex3f(0,0,0);
-            //     glVertex3f(1,0,1);
-            //     glVertex3f(-1,0,1);
-            //     glVertex3f(0,1,1);
-            //     glVertex3f(0,-1,1);
-            //     glVertex3f(0,0,1);
-            //     // glVertex3f(hepx,0,hepz);
-            // glEnd();
-
+            cpDraw_Axes();
+            cpDraw_BoundingSphere();
+           
             /**********************
              *  Draw surfaces for experiment.
              *  needs a function z, and two arrays x,y that span the mesh.
@@ -609,34 +567,35 @@ int main(int argc, char** argv ){
                 //     glVertex3f(-5,-5,sqrt(2));
                 //     glVertex3f(-5,5,sqrt(2));
                 // glEnd();
-                cpDraw_plane();
-                for (size_t i = 0; i < xs.size(); i++)
-                {
-                    glBegin(GL_LINE_STRIP);
-                    glColor4f(0,0,1,1);
+                // cpDraw_plane();
+                // time +=1e-3;
+                // for (size_t i = 0; i < xs.size(); i++)
+                // {
+                //     glBegin(GL_LINE_STRIP);
+                //     glColor4f(0,0,1,1);
 
-                    for (size_t j = 0; j < ys.size(); j++)
-                    {
-                        zs.push_back(f(xs[i],ys[j]));
-                        glVertex3f(xs[i],ys[j],zs[j]);
-                    }
-                    zs.clear();
-                    glEnd();
-                }
+                //     for (size_t j = 0; j < ys.size(); j++)
+                //     {
+                //         zs.push_back(f(xs[i],ys[j],time));
+                //         glVertex3f(xs[i],ys[j],zs[j]);
+                //     }
+                //     zs.clear();
+                //     glEnd();
+                // }
 
-                for (size_t i = 0; i < ys.size(); i++)
-                {
-                    glBegin(GL_LINE_STRIP);
-                    glColor4f(0,0,1,1);
+                // for (size_t i = 0; i < ys.size(); i++)
+                // {
+                //     glBegin(GL_LINE_STRIP);
+                //     glColor4f(0,0,1,1);
 
-                    for (size_t j = 0; j < xs.size(); j++)
-                    {
-                        zs.push_back(f(xs[j],ys[i]));
-                        glVertex3f(xs[j],ys[i],zs[j]);
-                    }
-                    zs.clear();
-                    glEnd();
-                }
+                //     for (size_t j = 0; j < xs.size(); j++)
+                //     {
+                //         zs.push_back(f(xs[j],ys[i],time));
+                //         glVertex3f(xs[j],ys[i],zs[j]);
+                //     }
+                //     zs.clear();
+                //     glEnd();
+                // }
 
     
 
@@ -655,11 +614,67 @@ int main(int argc, char** argv ){
 // } 
 
 void cpDraw_plane() {
+    glColor4f(1,0,0,0.4);
     glBegin(GL_QUADS);
-        glColor4f(1,0,0,0.4);
-        glVertex3f(5,5,sqrt(2));
-        glVertex3f(5,-5,sqrt(2));
+        // glColor4f(1,0,0,0.4);
+        glVertex3f(50,50,sqrt(2));
+        glVertex3f(50,-5,sqrt(2));
         glVertex3f(-5,-5,sqrt(2));
-        glVertex3f(-5,5,sqrt(2));
+        glVertex3f(-5,50,sqrt(2));
     glEnd();
+}
+
+void cpDraw_BoundingSphere() {
+    // Draws 3 circles. One per plane in 3D, as a reference object.
+    // Drawing circles around the axis for spatial reference.
+    std::vector<float> xcirc,ycirc;
+    float th;
+    for (int i = 0; i < 80; i++) {
+        th = 2.*PI*i/80.;
+        xcirc.push_back(cos(th));
+        ycirc.push_back(sin(th));
+    }
+    glBegin(GL_LINE_LOOP);
+        for (int i = 0; i < xcirc.size(); i++) {
+            glColor3f(1,0,0);
+            glVertex3f(xcirc[i], ycirc[i], 0);
+        }
+    glEnd();
+    glBegin(GL_LINE_LOOP);
+        glColor3f(0,0.5,1);
+        for (int i = 0; i < xcirc.size(); i++) {
+            glVertex3f(xcirc[i], 0, ycirc[i]);
+        }
+    glEnd();
+    glBegin(GL_LINE_LOOP);
+        glColor3f(1,0,1);
+        for (int i = 0; i < xcirc.size(); i++) {
+            glVertex3f(0, xcirc[i], ycirc[i]);
+        }
+    glEnd();
+}
+
+void cpDraw_Axes() {
+    // Draw XYZ Axes on screen.
+    glBegin(GL_LINE_LOOP);
+        // X AXIS in positive direction.
+        glColor3f(1,0,0); // red
+        glVertex3f(0,0,0);
+        glVertex3f(1,0,0);
+    glEnd();
+
+    glBegin(GL_LINE_LOOP);
+    // Y AXIS in positive direction.
+        glColor3f(0,1,0); // green
+        glVertex3f(0,0,0);
+        glVertex3f(0,1,0);
+    glEnd();
+
+    glBegin(GL_LINE_LOOP);
+    // Z AXIS in positive direction.
+        glColor3f(0,0,1); // blue
+        glVertex3f(0,0,0);
+        glVertex3f(0,0,1);
+    glEnd();
+
 }
