@@ -6,7 +6,7 @@ cxx = g++
 program = run
 
 # source files
-srcs = minimal-cplane.cpp
+srcs = minimal-cplane.cpp plotter.cpp cmdline.cpp
 
 # directory to sources and compiled obj files
 srcdir = src
