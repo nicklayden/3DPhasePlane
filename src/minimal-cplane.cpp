@@ -37,7 +37,8 @@ void DrawLine3(std::vector<std::vector<double> > y);
 void DrawLine2(std::vector<std::vector<double> > y, std::vector<double> t);
 
 inline double f(double x, double y, double t) {
-    return sqrt((x*x*y*y)/(x*x + y*y));
+    // return sqrt((x*x*y*y)/(x*x + y*y));
+    return 1 - x - y;
     // return cos(y)*sin(x)*exp(-x*x);
     // double r = x*x + y*y;
     // double w,bx,by;
@@ -130,7 +131,7 @@ public:
 
     void operator() (const std::vector<double>& xin, std::vector<double>& dxdt, const double /* t */) {
         double x,y,z;
-        // double c = sqrt(6.)/2.;
+        double c = sqrt(6.)/2.;
         x = xin[0]; y = xin[1]; z = xin[2];
     
         // dxdt[0] = x*(-2 + 2*x*x - y*y - z*z) + c*m_par*z*z;
@@ -141,7 +142,8 @@ public:
         // dxdt[1] = y*(c*m_par*x + 2*x*x + 1 - y*y - z*z); 
         // dxdt[2] = z*(1 + 2*x*x - y*y - z*z);
 
-
+        dxdt[0] = y;
+        dxdt[1] = m_par*x*(1-x);
 
         // dxdt[0] =  -2*x -  (x*x + y*y);
         // dxdt[1] = -(1.-x)*y;
@@ -174,14 +176,24 @@ public:
         // dxdt[1] = y*(q-2) - c*k2*w*w;
         // dxdt[2] = z*(q + 1 + c*k1*x);
         // dxdt[3] = w*(q + 1 + c*k2*y);
-        double k =2; double a1 = 3; double a2 = -1; double c = 1;
-        double Q = z; double W = xin[3];
+        // double k =2; double a1 = 3; double a2 = -1; double c = 1;
+        // double Q = z; double W = xin[3];
 
-        dxdt[0] =  sqrt(2)*k*a1*W*W+(1/2)*sqrt(6)*k*a2*W*Q+(1/3)*sqrt(3)*x*y*(-Q*Q+1)-(1/3)*sqrt(3)*x*Q*(2-2*c*c*y*y-2*x*x+a1*W*W+(3*sqrt(2)*(1/2))*a2*k*W*x);
-        dxdt[1] = -(1/3)*sqrt(3)*y*Q*(2-2*c*c*y*y-2*x*x+a1*W*W+(3*sqrt(2)*(1/2))*a2*k*W*x)+sqrt(3)*(-Q*Q+1)*(c*c*y*y-1)/(3*c*c);
-        dxdt[2] = (1/3)*sqrt(3)*(-Q*Q+1)*(Q*y-2*c*c*y*y-2*x*x+a1*W*W+(3*sqrt(2)*(1/2))*a2*k*W*x);
-        dxdt[3] =  W*(-sqrt(2)*k*x+(1/3)*sqrt(3)*(Q+y)-(1/3)*sqrt(3)*Q*Q*y-(1/3)*sqrt(3)*Q*(-2*c*c*y*y-2*x*x+a1*W*W+(3*sqrt(2)*(1/2))*a2*k*W*x));
+        // dxdt[0] = sqrt(0.2e1) * k * a1 * W * W + sqrt(0.6e1) * k * a2 * W * Q / 0.2e1 + sqrt(0.3e1) * x * y * (-Q * Q + 0.1e1) / 0.3e1 - sqrt(0.3e1) * x * Q * (0.2e1 - 0.2e1 * c * c * y * y - 0.2e1 * x * x + a1 * W * W + 0.3e1 / 0.2e1 * sqrt(0.2e1) * a2 * k * W * x) / 0.3e1;
+        // dxdt[1] = -sqrt(0.3e1) * y * Q * (0.2e1 - 0.2e1 * c * c * y * y - 0.2e1 * x * x + a1 * W * W + 0.3e1 / 0.2e1 * sqrt(0.2e1) * a2 * k * W * x) / 0.3e1 + sqrt(0.3e1) * (-Q * Q + 0.1e1) * (c * c * y * y - 0.1e1) * pow(c, -0.2e1) / 0.3e1;
+        // dxdt[2] = sqrt(0.3e1) * (-Q * Q + 0.1e1) * (Q * y - 0.2e1 * c * c * y * y - 0.2e1 * x * x + a1 * W * W + 0.3e1 / 0.2e1 * sqrt(0.2e1) * a2 * k * W * x) / 0.3e1;
+        // dxdt[3] = W * (-sqrt(0.2e1) * k * x + sqrt(0.3e1) * (Q + y) / 0.3e1 - sqrt(0.3e1) * Q * Q * y / 0.3e1 - sqrt(0.3e1) * Q * (-0.2e1 * c * c * y * y - 0.2e1 * x * x + a1 * W * W + 0.3e1 / 0.2e1 * sqrt(0.2e1) * a2 * k * W * x) / 0.3e1);
+
+        /*
         
+        x= sqrt(6)/4
+        y=sqrt(6)/4
+        q=1
+        w=sqrt(3)/6
+        */
+
+
+
 
         //lorenz
         // dxdt[0] = 10.*(y - x);
@@ -207,12 +219,13 @@ int main(int argc, char** argv ){
 
     sf::ContextSettings settings;
     settings.depthBits = 24; settings.majorVersion = 3; settings.minorVersion = 0;
-    sf::RenderWindow mainwin(sf::VideoMode(800,800), "NICE TITLE", sf::Style::Default, settings);
+    sf::RenderWindow mainwin(sf::VideoMode(800,800), "Phase Space", sf::Style::Default, settings);
+    // sf::RenderWindow secondwin(sf::VideoMode(800,800), "Time Evolution", sf::Style::Default, settings);
     sf::Clock Clock;
 
 
     // 2D SFML window.
-    // Plot plt("Time Evolution Solutions",20,3,7*800,800);
+    // Plot plt("Time Evolution Solutions",20,2,800,800);
     // plt.plotView.setCenter(sf::Vector2f(0,0));
 
     // x       : state vector (holds x,y,z coordinates of system)
@@ -236,8 +249,8 @@ int main(int argc, char** argv ){
      * ***********************************/
     std::vector<double> xs,ys,zs;
     double temp, tstep, tm, tn;
-    temp = 0;
-    tm = 50;
+    temp = -1;
+    tm = 1.1;
     tn = 101;
     tstep = (tm-temp)/tn;
     for (size_t i = 0; i < tn; i++)
@@ -306,7 +319,7 @@ int main(int argc, char** argv ){
     bool rotatey = false;
     bool rotatez = false;
     float angle = 0;
-    float anglex = 0;
+    float anglex = 90;
     float angley = 0;
     float anglez = 0;
     float rotspeed = 10;
@@ -318,7 +331,7 @@ int main(int argc, char** argv ){
 
     // Initial conditions, dynamical system settings, and gui settings for the window.
     int numinit;
-    double r, dr, tmax, xcenter, ycenter, sysstep;
+    double r, dr, tmax, xcenter, ycenter,dt,maxtime,mintime;
     float bkg_alpha, bkg_r, bkg_g, bkg_b, \
           gui_aspect, gui_zfar, gui_znear, \
           gui_fovy, gui_camera_dist;
@@ -341,8 +354,10 @@ int main(int argc, char** argv ){
     ycenter = vm["init.conds.ycenter"].as<double>();
     numinit = vm["init.conds.numinit"].as<int>();
     sysfile = vm["system.file"].as<std::string>();
-    sysstep = vm["system.stepsize"].as<double>();
     sysmethod = vm["system.method"].as<std::string>();
+    maxtime = vm["system.timemax"].as<double>();
+    mintime = vm["system.timemin"].as<double>();
+    dt = vm["system.dt"].as<double>();
     bkg_r = vm["gui.bkg_r"].as<float>();
     bkg_g = vm["gui.bkg_g"].as<float>();
     bkg_b = vm["gui.bkg_b"].as<float>();
@@ -353,6 +368,10 @@ int main(int argc, char** argv ){
     gui_zfar = vm["gui.zfar"].as<float>();
     gui_camera_dist = vm["gui.camera_dist"].as<float>();
 
+
+    // 2D SFML window.
+    // Plot plt("Time Evolution Solutions",2*maxtime,2,800,800);
+    // plt.plotView.setCenter(sf::Vector2f(0,0));
 
     // Generate uniform random numbers in a circle centerd at a,b with radius r:
     // generate_random_circle(xc,yc,xcenter,ycenter,r,tmax,numinit);
@@ -399,7 +418,7 @@ int main(int argc, char** argv ){
     glutInit(&argc, argv);
     bool running = true; // This is used so that the loop can end and opengl frees resources properly!!
     // SFML main window instance. Drawing handled in pure opengl context.
-    double time = 0.0;
+    // double time = 0.0;
     while (running) {
         // for (int q = 0; q < 250; q++) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -481,7 +500,9 @@ int main(int argc, char** argv ){
             glMatrixMode(GL_MODELVIEW);
             glLoadIdentity();
             glTranslatef(0.f,0.f,-gui_camera_dist);
-            glRotatef(-90.,1.,0.,0.); // this rotates to put XY plane into perspective
+            glRotatef(90.,1.,0.,0.); // this rotates to put XY plane into perspective
+            glRotatef(360.,0.,1.,0.);
+            glRotatef(360.,0.,0.,1.);
 
             // glColor4f(1,1,1,0.);
             // glutSolidSphere(1,50,50);
@@ -515,16 +536,44 @@ int main(int argc, char** argv ){
 
                 //FORWARD TIME INTEGRATION.
                 // INITIAL CONDITIONS SET FROM VECTORS DEFINED ABOVE
-                x[0] = xc[j]; x[3] = yc[j]; x[2] = 0.; x[1] = 0.; // This line defines randomly generated initial conditions 
+                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.2; x[3] = 0; // This line defines randomly generated initial conditions 
                 // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
-                boost::numeric::odeint::integrate_const(stepper,test, x, 0.,10.,0.001,push_back_state_and_time(y,t));
+                boost::numeric::odeint::integrate_const(stepper,test, x, mintime,maxtime,dt,push_back_state_and_time(y,t));
                 // glViewport(0,0,mainwin.getSize().x,mainwin.getSize().y/2);
                 // DrawLine2(y,t);
-                // glViewport(mainwin.getSize().x/2,mainwin.getSize().y/2,mainwin.getSize().x/2,mainwin.getSize().y/2);
-                // DrawLine3(y);
+                // glPushMatrix();
+                // glRotatef(90,1,0,0); 
+                // glViewport(0,mainwin.getSize().y/2,mainwin.getSize().x,mainwin.getSize().y/2);
+                // // glOrtho(-100,100,-2,2,-1,1);
+                // // glScalef(-100/mainwin.getSize().x,100/mainwin.getSize().y,1);
+                // glPushMatrix();
+                // glRotatef(90.,1.,0.,0.);
+                // glRotatef(-anglex*rotspeed,1.,0.,0.);
+                // glRotatef(360.,0.,1.,0.);
+                // glRotatef(-angley*rotspeed,0.,1.,0.);
+                // glRotatef(360.,0.,0.,1.);
+                // glRotatef(-anglez*rotspeed,0.,0.,1.);
+                // glBegin(GL_LINE_STRIP);
+                //     for (int i = 0; i < y.size(); i++) {
+                //         xp = y[i][0]; yp = y[i][3]; zp = y[i][1]; //placeholders for readability
+                //         glColor3f(0,1,0);
+                //         glVertex2f(t[i], xp);
+                //     }
+                // glEnd();
+                // glPopMatrix();
+                // // glPushMatrix();
+                // glViewport(0,0,mainwin.getSize().x/2,mainwin.getSize().y/2);
+                // if (plt.mainwindow.isOpen()) {
+                // plt.mainwindow.setActive(true);
+                // plt.plot(t,transpose_copy(y)[0]);
+                // plt.plot(t,transpose_copy(y)[1],sf::Color::Green);
+                // plt.plot(t,transpose_copy(y)[2],sf::Color::Red);
+                // plt.plot(t,transpose_copy(y)[3],sf::Color::Magenta);
+                // plt.mainwindow.setActive(false);
+                // }
                 glBegin(GL_LINE_STRIP);
                     for (int i = 0; i < y.size(); i++) {
-                        xp = y[i][0]; yp = y[i][3]; zp = y[i][2]; //placeholders for readability
+                        xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
                         if (2*xp*xp - yp*yp - zp*zp < 0)
                         {
                             glColor3f(0.109, 0.894, 0.949);    
@@ -532,7 +581,8 @@ int main(int argc, char** argv ){
                         }
                         else 
                         {
-                            glColor3f(0,1,0);
+                            glColor3f(0.603,0.196,0.6);
+                            // glColor3f(0,0,1);
                             glVertex3f(xp, yp, zp);
                         }
                     }
@@ -540,17 +590,25 @@ int main(int argc, char** argv ){
                 y.clear(); t.clear();
 
 
-                x[0] = xc[j]; x[3] = yc[j]; x[2] = 0.; x[1] = 0.; // This line defines randomly generated initial conditions 
+                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.2; x[3] = 0; // This line defines randomly generated initial conditions 
                 // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
                 // DRAWS BACKWARD SOLUTION
-                boost::numeric::odeint::integrate_const(stepper,test, x, 0.,-10.,-0.001,push_back_state_and_time(y,t));
+                boost::numeric::odeint::integrate_const(stepper,test, x, mintime,-maxtime,-dt,push_back_state_and_time(y,t));
+                // if (plt.mainwindow.isOpen()) {
+                // plt.mainwindow.setActive(true);
+                // plt.plot(t,transpose_copy(y)[0]);
+                // plt.plot(t,transpose_copy(y)[1],sf::Color::Green);
+                // plt.plot(t,transpose_copy(y)[2],sf::Color::Red);
+                // plt.plot(t,transpose_copy(y)[3],sf::Color::Magenta);
+                // plt.mainwindow.setActive(false);
+                // }
 
                 // glViewport(mainwin.getSize().x/2,mainwin.getSize().y/2,mainwin.getSize().x/2,mainwin.getSize().y/2);
                 // mainwin.setActive(true);
                 // Draw solution curves in 3D phase space.
                 glBegin(GL_LINE_STRIP);
                     for (int i = 0; i < y.size(); i++) {
-                        xp = y[i][0]; yp = y[i][3]; zp = y[i][2]; //placeholders for readability
+                        xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
                         if (2*xp*xp - yp*yp - zp*zp < 0)
                         {
                             glColor3f(0.109, 0.894, 0.949);    
@@ -558,17 +616,20 @@ int main(int argc, char** argv ){
                         }
                         else 
                         {
-                            glColor3f(0,1,0);
+                            glColor3f(0.603,0.196,0.6);
+                            // glColor3f(0,0,1);
                             glVertex3f(xp, yp, zp);
                         }
                     }
                 glEnd();
 
-                glBegin(GL_POINTS);
-                    glColor3f(1,0,0);
-                    // glVertex3f(xt[j],yt[j],zt[j]);
-                    glVertex3f(xc[j],yc[j],0.2);
-                glEnd();
+                // glBegin(GL_POINTS);
+                //     glColor3f(1,0,0);
+                //     // glVertex3f(xt[j],yt[j],zt[j]);
+                //     glVertex3f(xc[j],yc[j],yc[j]);
+                //     glColor3f(0,0,1);
+                //     glVertex3f(sqrt(6)/4.,sqrt(3)/6.,sqrt(6)/4.);
+                // glEnd();
 
                 // delete current solution curve to prepare for the next one...
                 y.clear(); t.clear();
@@ -576,8 +637,14 @@ int main(int argc, char** argv ){
             } // end j loop
             // plt.show();
             // plt.mainwindow.setActive(true);
-            // plt.EventLoop();
-            // plt.mainwindow.display();
+            // if (plt.mainwindow.isOpen()) {
+            //     plt.mainwindow.setActive(true);
+            //     plt.EventLoop();
+            //     plt.mainwindow.display();
+            //     plt.mainwindow.clear(sf::Color::Black);
+            //     plt.mainwindow.setActive(false);
+            // }
+            
             // plt.mainwindow.setActive(false);
 
             // mainwin.setActive(true);
@@ -593,62 +660,34 @@ int main(int argc, char** argv ){
 
             cpDraw_Axes();
             cpDraw_BoundingSphere();
-           
-            /**********************
-             *  Draw surfaces for experiment.
-             *  needs a function z, and two arrays x,y that span the mesh.
-             * 
-             * 
-             * 
-             * ********************/
+            // glutSolidSphere(1,100,100);
 
-            // glEnable(GL_DEPTH_TEST);
-                // glStencilFunc(GL_ALWAYS,1,0xFF);
-                // glStencilOp(GL_KEEP,GL_KEEP,GL_REPLACE);
-                // glStencilMask(0xFF);
-                // glDepthMask(GL_TRUE);
-                // glClear(GL_STENCIL_BUFFER_BIT);
-                // glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                // glBegin(GL_QUADS);
-                //     glColor4f(1,0,0,0.4);
-                //     glVertex3f(5,5,sqrt(2));
-                //     glVertex3f(5,-5,sqrt(2));
-                //     glVertex3f(-5,-5,sqrt(2));
-                //     glVertex3f(-5,5,sqrt(2));
-                // glEnd();
-                // cpDraw_plane();
-                // time +=1e-3;
-                // for (size_t i = 0; i < xs.size(); i++)
-                // {
-                //     glBegin(GL_LINE_STRIP);
-                //     glColor4f(0,0,1,1);
+            // // PLOT SURFACE
+            // for (size_t i = 0; i < xs.size(); i++)
+            // {
+            //     glBegin(GL_LINE_STRIP);
+            //         glColor3f(0,0,1);
+            //         for (size_t j = 0; j < ys.size(); j++)
+            //         {
+            //             zs.push_back(f(xs[i],ys[j],0));
+            //             glVertex3f(xs[i],ys[j],zs[j]);   
+            //         }
+            //         zs.clear();
+            //     glEnd();
+            // }
 
-                //     for (size_t j = 0; j < ys.size(); j++)
-                //     {
-                //         zs.push_back(f(xs[i],ys[j],time));
-                //         glVertex3f(xs[i],ys[j],zs[j]);
-                //     }
-                //     zs.clear();
-                //     glEnd();
-                // }
-
-                // for (size_t i = 0; i < ys.size(); i++)
-                // {
-                //     glBegin(GL_LINE_STRIP);
-                //     glColor4f(0,0,1,1);
-
-                //     for (size_t j = 0; j < xs.size(); j++)
-                //     {
-                //         zs.push_back(f(xs[j],ys[i],time));
-                //         glVertex3f(xs[j],ys[i],zs[j]);
-                //     }
-                //     zs.clear();
-                //     glEnd();
-                // }
-
-    
-
-
+            // for (size_t i = 0; i < ys.size(); i++)
+            // {
+            //     glBegin(GL_LINE_STRIP);
+            //         glColor3f(0,0,1);
+            //         for (size_t j = 0; j < xs.size(); j++)
+            //         {
+            //             zs.push_back(f(xs[j],ys[i],0));
+            //             glVertex3f(xs[j],ys[i],zs[j]);   
+            //         }
+            //         zs.clear();
+            //     glEnd();
+            // }
 
             // Display everything we've done to the SFML instance
             // This swaps the opengl buffer to sfml.
@@ -743,7 +782,6 @@ std::vector<std::vector<double> > transpose_copy(std::vector<std::vector<double>
 
 }
 
-
 void DrawLine3(std::vector<std::vector<double> > y) {
     double xp,yp,zp;
     glBegin(GL_LINE_STRIP);
@@ -754,6 +792,7 @@ void DrawLine3(std::vector<std::vector<double> > y) {
         }
     glEnd();
 }
+
 void DrawLine2(std::vector<std::vector<double> > y, std::vector<double> t) {
     double xp,yp,zp;
     glBegin(GL_LINE_STRIP);
