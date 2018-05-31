@@ -1,5 +1,5 @@
 # 3DPhasePlane
-Solve systems of ODEs and plot phase planes in up to 3 dimensions
+Solve systems of ODEs and plot phase planes in up to 3 dimensions. Utilizes OpenGL and the boost libraries.
 
 
 ## Future updates necessary
