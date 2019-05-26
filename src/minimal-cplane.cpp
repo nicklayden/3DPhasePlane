@@ -69,7 +69,7 @@ inline double random(double a, double b) {
     return distr(eng);
 }
 
-double generate_random_circle(std::vector<double>& xin, std::vector<double>& yin, double a, double b, double radius, double thetamax, int N) {
+void generate_random_circle(std::vector<double>& xin, std::vector<double>& yin, double a, double b, double radius, double thetamax, int N) {
     double r, theta, xt, yt;
     for (int i=0; i < N; i++) {
         r = random(0.,radius*radius);
@@ -82,7 +82,7 @@ double generate_random_circle(std::vector<double>& xin, std::vector<double>& yin
 
 }
 
-double generate_random_annulus(std::vector<double>& xin, std::vector<double>& yin, double a, double b, double radius,double dr, double thetamax, int N) {
+void generate_random_annulus(std::vector<double>& xin, std::vector<double>& yin, double a, double b, double radius,double dr, double thetamax, int N) {
     double r, theta, xt, yt;
     for (int i=0; i < N; i++) {
         r = random(radius, (radius+dr));
@@ -232,7 +232,7 @@ int main(int argc, char** argv ){
     // t       : stores time values of the solution. (for autonomous systems, isn't useful)
     // y       : matrix containing solutions for all N coordinates
     // stepper : numerical method used to integrate the ODE
-    std::vector<double> x(4);
+    std::vector<double> x(3);
     std::vector<double> t, xc, yc, inflx, infly, t2;
     std::vector<std::vector<double> > y, y2, transposed;
     boost::numeric::odeint::runge_kutta_dopri5<std::vector<double> > stepper;
@@ -330,7 +330,7 @@ int main(int argc, char** argv ){
 
 
     // Initial conditions, dynamical system settings, and gui settings for the window.
-    int numinit;
+    int numinit, status;
     double r, dr, tmax, xcenter, ycenter,dt,maxtime,mintime;
     float bkg_alpha, bkg_r, bkg_g, bkg_b, \
           gui_aspect, gui_zfar, gui_znear, \
@@ -346,8 +346,8 @@ int main(int argc, char** argv ){
         #####################################################################################
     */
     boost::program_options::variables_map vm;
-    config_mapping(argc, argv, vm);
-
+    status = config_mapping(argc, argv, vm);
+    std::cout << "Mapping status: " << status << std::endl;
     r = vm["init.conds.radius"].as<double>();
     dr = vm["init.conds.dr"].as<double>();
     tmax = vm["init.conds.thetamax"].as<double>();
@@ -376,6 +376,7 @@ int main(int argc, char** argv ){
 
     // Generate uniform random numbers in a circle centerd at a,b with radius r:
     // generate_random_circle(xc,yc,xcenter,ycenter,r,tmax,numinit);
+
     generate_random_annulus(xc,yc,xcenter,ycenter,r,dr,tmax,numinit);
 
 

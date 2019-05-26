@@ -31,7 +31,7 @@ int cmdline_settings(int argc, char** argv, double* radius, double* thetamax,
         po::store(po::parse_config_file(config_file,init), vm);
 
         po::notify(vm);
-
+        return SUCCESS;
 
     }
     catch(po::error& e)
@@ -91,7 +91,7 @@ int config_mapping(int argc, char** argv, boost::program_options::variables_map&
 
         po::notify(dictionary);
         std::cout << "Mapped " << dictionary.size() << " configurations." << std::endl;
-
+        return SUCCESS;
     }
     catch(po::error& e)
     {

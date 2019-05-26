@@ -21,7 +21,7 @@ cppflags = -std=c++11 -O3
 # specialized cpp flags - per compile basis
 cppflags += $(cppflags-$@)
 # flags needed only to compile executable at final step
-cppflags-run += -lGLU -lGL -lglut -lboost_program_options -lsfml-graphics -lsfml-system -lsfml-window
+cppflags-run += -lGLU -lGL -lglut -lboost_program_options -lsfml-graphics -lsfml-system -lsfml-window 
 
 # linker flags:
 #linkflags = -lGLU -lGL -lglut -lboost_program_options
