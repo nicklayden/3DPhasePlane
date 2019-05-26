@@ -334,9 +334,10 @@ int main(int argc, char** argv ){
     double r, dr, tmax, xcenter, ycenter,dt,maxtime,mintime;
     float bkg_alpha, bkg_r, bkg_g, bkg_b, \
           gui_aspect, gui_zfar, gui_znear, \
-          gui_fovy, gui_camera_dist;
+          gui_fovy, gui_camera_dist,gui_camera_dist_x,gui_camera_dist_y;
     std::string sysmethod, sysfile;
-
+    gui_camera_dist_x = 0.f;
+    gui_camera_dist_y = 0.f;
 
     /* ######################################################################################
         LOAD PROGRAM CONFIGURATION FROM CONFIG.INI!!!!
@@ -441,10 +442,10 @@ int main(int argc, char** argv ){
                 if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Numpad7)){
 				    rotatex=!rotatex; // toggle continuous rotation in x
 			    }
-                if ((event.type == sf::Event::KeyPressed) && (sf::Keyboard::isKeyPressed(sf::Keyboard::Numpad1))){
+                if ((event.type == sf::Event::KeyPressed) && (sf::Keyboard::isKeyPressed(sf::Keyboard::J))){
                     anglex += 0.1; // hold down positive rotation in x
 			    }
-                if ((event.type == sf::Event::KeyPressed) && (sf::Keyboard::isKeyPressed(sf::Keyboard::Numpad4))){
+                if ((event.type == sf::Event::KeyPressed) && (sf::Keyboard::isKeyPressed(sf::Keyboard::U))){
                     anglex -= 0.1; // hold down positive rotation in x
 			    }
 
@@ -452,10 +453,10 @@ int main(int argc, char** argv ){
                 if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Numpad8)){
 				    rotatey=!rotatey; // toggle continuous rotation in y
 			    }
-                if ((event.type == sf::Event::KeyPressed) && (sf::Keyboard::isKeyPressed(sf::Keyboard::Numpad2))){
+                if ((event.type == sf::Event::KeyPressed) && (sf::Keyboard::isKeyPressed(sf::Keyboard::I))){
                     angley += 0.1; // hold down positive rotation in y
 			    }
-                if ((event.type == sf::Event::KeyPressed) && (sf::Keyboard::isKeyPressed(sf::Keyboard::Numpad5))){
+                if ((event.type == sf::Event::KeyPressed) && (sf::Keyboard::isKeyPressed(sf::Keyboard::K))){
                     angley -= 0.1; // hold down positive rotation in y
 			    }
                 
@@ -463,10 +464,10 @@ int main(int argc, char** argv ){
                 if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Numpad9)){
 				    rotatez=!rotatez; // toggle continuous rotation in z
 			    }
-                if ((event.type == sf::Event::KeyPressed) && (sf::Keyboard::isKeyPressed(sf::Keyboard::Numpad3))){
+                if ((event.type == sf::Event::KeyPressed) && (sf::Keyboard::isKeyPressed(sf::Keyboard::O))){
                     anglez += 0.1; // hold down positive rotation in z
 			    }
-                if ((event.type == sf::Event::KeyPressed) && (sf::Keyboard::isKeyPressed(sf::Keyboard::Numpad6))){
+                if ((event.type == sf::Event::KeyPressed) && (sf::Keyboard::isKeyPressed(sf::Keyboard::L))){
                     anglez -= 0.1; // hold down negative rotation in z
 			    } 
                 if (event.type == sf::Event::Resized)
@@ -487,11 +488,26 @@ int main(int argc, char** argv ){
                     glMatrixMode(GL_MODELVIEW);
                 }
                 if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Up)){
-				    gui_camera_dist -= 0.2; // toggle continuous rotation in z
+				    gui_camera_dist -= 0.2; // z distance to camera
 			    }
                 if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Down)){
-				    gui_camera_dist += 0.2; // toggle continuous rotation in z
+				    gui_camera_dist += 0.2; // z distance to camera
 			    }
+                if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::PageUp)){
+				    gui_camera_dist_x -= 0.2; // x distance to camera
+			    }
+                if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::PageDown)){
+				    gui_camera_dist_x += 0.2; // x distance to camera
+			    }
+                if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::Home)){
+				    gui_camera_dist_y -= 0.2; // y distance to camera
+			    }
+                if ((event.type == sf::Event::KeyPressed) && (event.key.code == sf::Keyboard::End)){
+				    gui_camera_dist_y += 0.2; // y distance to camera
+			    }
+
+
+
 
 
             } // event loop
@@ -499,7 +515,7 @@ int main(int argc, char** argv ){
             // clear window to prepare for drawing. fill window background with default color (defined above)
             glMatrixMode(GL_MODELVIEW);
             glLoadIdentity();
-            glTranslatef(0.f,0.f,-gui_camera_dist);
+            glTranslatef(-gui_camera_dist_x,-gui_camera_dist_y,-gui_camera_dist);
             glRotatef(90.,1.,0.,0.); // this rotates to put XY plane into perspective
             glRotatef(360.,0.,1.,0.);
             glRotatef(360.,0.,0.,1.);
