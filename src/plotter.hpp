@@ -28,7 +28,7 @@ class Plot
         void EventLoop();
         void animate();
         void setTitle(std::string title);
-        std::string toString(double number);
+        void toString(double number);
         void setxlim(double xmin, double xmax);
         void setylim(double ymin, double ymax);
         void set_xlabel(std::string label, sf::Font font);

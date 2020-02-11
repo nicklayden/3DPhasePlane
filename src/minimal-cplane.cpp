@@ -36,9 +36,48 @@ std::vector<std::vector<double> > transpose_copy(std::vector<std::vector<double>
 void DrawLine3(std::vector<std::vector<double> > y);
 void DrawLine2(std::vector<std::vector<double> > y, std::vector<double> t);
 
-inline double f(double x, double y, double t) {
+inline double f(double z, double eta, double t) {
+
+
+	// double t1 , t2 , t8 , t20 ;
+
+
+	// t1 = z * z;
+	// t2 = t1 * z;
+	// t8 = sin(eta);
+	// t20 = 0.1e1 / (0.1e0 * t2 + 0.5000e4 * t1 + 0.125e2) * (0.1e0 * t2 * eta + 0.5000e4 * t1 * eta + 0.125e2 * eta - 0.1e0 * t2 * t8 - 0.5000e4 * t1 * t8 - 0.125e2 * t8 - 0.3141592656e5 * t1);
+
+	// return t20 ;
+
+    // Alans Equation
+    // double a,b,c,d,k,r;
+    // k = eta;
+    // r = z;
+    // a = sinh(k*(M_PI - r)) + sinh(k*r);
+    // b = cosh(k*(M_PI - r)) - cosh(k*r);
+    // c = sinh(k*(M_PI/2. + r)) + sinh(k*(M_PI/2. - r));
+    // d = cosh(k*(M_PI/2. + r)) - cosh(k*(M_PI/2. - r));
+
+    // return cos(r)*a/sin(r) + k*b - tan(r)*(tan(r)*c + k*d);
+
+
+    return exp(-(z*z) - eta*eta);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     // return sqrt((x*x*y*y)/(x*x + y*y));
-    return 1 - x - y;
+    // return 1 - x - y;
     // return cos(y)*sin(x)*exp(-x*x);
     // double r = x*x + y*y;
     // double w,bx,by;
@@ -49,6 +88,7 @@ inline double f(double x, double y, double t) {
     // return 1./r + 1e-2/r2;
 
 }
+
 
 inline double x_start(double y) {
     return sqrt(1 - y*y);
@@ -142,8 +182,8 @@ public:
         // dxdt[1] = y*(c*m_par*x + 2*x*x + 1 - y*y - z*z); 
         // dxdt[2] = z*(1 + 2*x*x - y*y - z*z);
 
-        dxdt[0] = y;
-        dxdt[1] = m_par*x*(1-x);
+        // dxdt[0] = -9.81 + 0.0071*x*x;
+        // dxdt[1] = m_par*x*(1-x);
 
         // dxdt[0] =  -2*x -  (x*x + y*y);
         // dxdt[1] = -(1.-x)*y;
@@ -195,10 +235,10 @@ public:
 
 
 
-        //lorenz
-        // dxdt[0] = 10.*(y - x);
-        // dxdt[1] = x*(28. - z) - y;
-        // dxdt[2] = x*y - (8./3.)*z;
+        // lorenz
+        dxdt[0] = 10.*(y - x);
+        dxdt[1] = x*(28. - z) - y;
+        dxdt[2] = x*y - (8./3.)*z;
     }
 
     public:
@@ -223,7 +263,7 @@ int main(int argc, char** argv ){
     // sf::RenderWindow secondwin(sf::VideoMode(800,800), "Time Evolution", sf::Style::Default, settings);
     sf::Clock Clock;
 
-
+    // mainwin.setFramerateLimit(30);
     // 2D SFML window.
     // Plot plt("Time Evolution Solutions",20,2,800,800);
     // plt.plotView.setCenter(sf::Vector2f(0,0));
@@ -253,11 +293,20 @@ int main(int argc, char** argv ){
     tm = 1.1;
     tn = 101;
     tstep = (tm-temp)/tn;
-    for (size_t i = 0; i < tn; i++)
-    {   
-        xs.push_back(temp + tstep*i);
-        ys.push_back(temp + tstep*i);
+    // for (size_t i = 0; i < tn; i++)
+    // {   
+    //     xs.push_back(temp + tstep*i);
+    //     ys.push_back(temp + tstep*i);
+    // }
+
+    for (size_t i = 0; i < 200; i++)
+    {
+        ys.push_back(-5 + i*(10./200.));
+        xs.push_back(-5 + i*10./200.);
     }
+    
+
+
 
 
 /****************************************************************************
@@ -418,6 +467,7 @@ int main(int argc, char** argv ){
     // }
 
     glutInit(&argc, argv);
+    int jstep = 1; 
     bool running = true; // This is used so that the loop can end and opengl frees resources properly!!
     // SFML main window instance. Drawing handled in pure opengl context.
     // double time = 0.0;
@@ -550,10 +600,10 @@ int main(int argc, char** argv ){
                 dynamical_system test(lambda,5.,5.); 
 
 
-
+                // int j = 0;
                 //FORWARD TIME INTEGRATION.
                 // INITIAL CONDITIONS SET FROM VECTORS DEFINED ABOVE
-                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.2; x[3] = 0; // This line defines randomly generated initial conditions 
+                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.2; x[3]=0;// This line defines randomly generated initial conditions 
                 // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
                 boost::numeric::odeint::integrate_const(stepper,test, x, mintime,maxtime,dt,push_back_state_and_time(y,t));
                 // glViewport(0,0,mainwin.getSize().x,mainwin.getSize().y/2);
@@ -588,69 +638,84 @@ int main(int argc, char** argv ){
                 // plt.plot(t,transpose_copy(y)[3],sf::Color::Magenta);
                 // plt.mainwindow.setActive(false);
                 // }
+
+                int kmax = y.size()-1;
+
+                int iter = jstep % kmax;
+                jstep++;
+                std::cout << iter << std::endl;
                 glBegin(GL_LINE_STRIP);
-                    for (int i = 0; i < y.size(); i++) {
+                    for (int i = 0; i < iter; i++) {
                         xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
-                        if (2*xp*xp - yp*yp - zp*zp < 0)
-                        {
-                            glColor3f(0.109, 0.894, 0.949);    
+                        // if (2*xp*xp - yp*yp - zp*zp < 0)
+                        // {
+                            glColor3f(0.2, 0.5, (float)j);    
                             glVertex3f(xp, yp, zp);
-                        }
-                        else 
-                        {
-                            glColor3f(0.603,0.196,0.6);
-                            // glColor3f(0,0,1);
-                            glVertex3f(xp, yp, zp);
-                        }
+                        // }
+                        // else 
+                        // {
+                            // glColor3f(0.603,0.196,0.6);
+                            // // glColor3f(0,0,1);
+                            // glVertex3f(xp, yp, zp);
+                        // }
                     }
+                glEnd();
+                glBegin(GL_POINTS);
+                    int kk = y.size()-1;
+                    kk = iter;
+                    xp = y[kk][0]; yp = y[kk][1]; zp = y[kk][2]; 
+                    glColor3f(1,0,0);
+                    glPointSize(100);
+                    glVertex3f(xp,yp,zp);
+                    glPointSize(1);
                 glEnd();
                 y.clear(); t.clear();
 
 
-                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.2; x[3] = 0; // This line defines randomly generated initial conditions 
-                // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
-                // DRAWS BACKWARD SOLUTION
-                boost::numeric::odeint::integrate_const(stepper,test, x, mintime,-maxtime,-dt,push_back_state_and_time(y,t));
-                // if (plt.mainwindow.isOpen()) {
-                // plt.mainwindow.setActive(true);
-                // plt.plot(t,transpose_copy(y)[0]);
-                // plt.plot(t,transpose_copy(y)[1],sf::Color::Green);
-                // plt.plot(t,transpose_copy(y)[2],sf::Color::Red);
-                // plt.plot(t,transpose_copy(y)[3],sf::Color::Magenta);
-                // plt.mainwindow.setActive(false);
-                // }
+                // x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.2; x[3] = 0; // This line defines randomly generated initial conditions 
+                // // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
+                // // DRAWS BACKWARD SOLUTION
+                // boost::numeric::odeint::integrate_const(stepper,test, x, mintime,-maxtime,-dt,push_back_state_and_time(y,t));
+            //     // if (plt.mainwindow.isOpen()) {
+            //     // plt.mainwindow.setActive(true);
+            //     // plt.plot(t,transpose_copy(y)[0]);
+            //     // plt.plot(t,transpose_copy(y)[1],sf::Color::Green);
+            //     // plt.plot(t,transpose_copy(y)[2],sf::Color::Red);
+            //     // plt.plot(t,transpose_copy(y)[3],sf::Color::Magenta);
+            //     // plt.mainwindow.setActive(false);
+            //     // }
 
-                // glViewport(mainwin.getSize().x/2,mainwin.getSize().y/2,mainwin.getSize().x/2,mainwin.getSize().y/2);
-                // mainwin.setActive(true);
+            //     // glViewport(mainwin.getSize().x/2,mainwin.getSize().y/2,mainwin.getSize().x/2,mainwin.getSize().y/2);
+            //     // mainwin.setActive(true);
                 // Draw solution curves in 3D phase space.
-                glBegin(GL_LINE_STRIP);
-                    for (int i = 0; i < y.size(); i++) {
-                        xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
-                        if (2*xp*xp - yp*yp - zp*zp < 0)
-                        {
-                            glColor3f(0.109, 0.894, 0.949);    
-                            glVertex3f(xp,yp,zp);
-                        }
-                        else 
-                        {
-                            glColor3f(0.603,0.196,0.6);
-                            // glColor3f(0,0,1);
-                            glVertex3f(xp, yp, zp);
-                        }
-                    }
-                glEnd();
-
-                // glBegin(GL_POINTS);
-                //     glColor3f(1,0,0);
-                //     // glVertex3f(xt[j],yt[j],zt[j]);
-                //     glVertex3f(xc[j],yc[j],yc[j]);
-                //     glColor3f(0,0,1);
-                //     glVertex3f(sqrt(6)/4.,sqrt(3)/6.,sqrt(6)/4.);
+                // glBegin(GL_LINE_STRIP);
+                //     for (int i = 0; i < y.size(); i++) {
+                //         xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
+                //         // if (2*xp*xp - yp*yp - zp*zp < 0)
+                //         // {
+                //             glColor3f(0.109, 0.894, 0.949);    
+                //             glVertex3f(xp,yp,zp);
+                //         // }
+                //         // else 
+                //         // {
+                //             // glColor3f(0.603,0.196,0.6);
+                //             // // glColor3f(0,0,1);
+                //             // glVertex3f(xp, yp, zp);
+                //         // }
+                //     }
                 // glEnd();
 
-                // delete current solution curve to prepare for the next one...
-                y.clear(); t.clear();
-                // mainwin.setActive(false);
+            //     // glBegin(GL_POINTS);
+            //     //     glColor3f(1,0,0);
+            //     //     // glVertex3f(xt[j],yt[j],zt[j]);
+            //     //     glVertex3f(xc[j],yc[j],yc[j]);
+            //     //     glColor3f(0,0,1);
+            //     //     glVertex3f(sqrt(6)/4.,sqrt(3)/6.,sqrt(6)/4.);
+            //     // glEnd();
+
+            //     // delete current solution curve to prepare for the next one...
+            //     y.clear(); t.clear();
+            //     // mainwin.setActive(false);
             } // end j loop
             // plt.show();
             // plt.mainwindow.setActive(true);
@@ -676,8 +741,23 @@ int main(int argc, char** argv ){
              * **************************************************************************************/
 
             cpDraw_Axes();
-            cpDraw_BoundingSphere();
+            // cpDraw_BoundingSphere();
             // glutSolidSphere(1,100,100);
+
+            // glBegin(GL_POINTS);
+            // for (size_t i = 0; i < xs.size(); i++)
+            // {
+            //     for (size_t j = 0; j < ys.size(); j++)
+            //     {
+            //         if (j>0 && f(xs[i],ys[j]-1,0)*f(xs[i],ys[j],0) < 0) 
+            //         {
+            //             glColor3f(1,0,0);
+            //             glVertex3f(xs[i],ys[j],f(xs[i],ys[j],0));
+            //         }
+            //     }     
+            // }
+            // glEnd();
+
 
             // // PLOT SURFACE
             // for (size_t i = 0; i < xs.size(); i++)
@@ -685,7 +765,7 @@ int main(int argc, char** argv ){
             //     glBegin(GL_LINE_STRIP);
             //         glColor3f(0,0,1);
             //         for (size_t j = 0; j < ys.size(); j++)
-            //         {
+            //         {   
             //             zs.push_back(f(xs[i],ys[j],0));
             //             glVertex3f(xs[i],ys[j],zs[j]);   
             //         }

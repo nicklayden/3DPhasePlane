@@ -175,7 +175,7 @@ void Plot::setTitle(std::string title)
 
 }
 
-std::string Plot::toString(double number)
+void Plot::toString(double number)
 {
 
 }
