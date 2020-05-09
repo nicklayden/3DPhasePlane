@@ -170,10 +170,36 @@ public:
     // exponential potential with constant epsilon background
 
     void operator() (const std::vector<double>& xin, std::vector<double>& dxdt, const double /* t */) {
-        double x,y,z;
-        double c = sqrt(6.)/2.;
-        x = xin[0]; y = xin[1]; z = xin[2];
+        double x,y,z,w;
+        x = xin[0]; y = xin[2]; z = xin[3], w = xin[1];
     
+        // Sean Msc thesis equations
+        // phi = x   psi == w   y  === y       Q === z
+        // Need qbar, chi, c, a2, k defined
+        double qbar, c, k, a2, chi;
+        k = 2.;
+        a2 = -0.5;
+        c = 1.;
+
+        qbar = 2*c*c*y*y + 2*w*w - x*x - (3./sqrt(2))*k*a2*x*w;
+        chi = (1/sqrt(3))*(y*(z*z - 1) - z*(qbar + 1));
+
+
+        dxdt[0] = -x*(sqrt(2)*k*w + chi);
+        dxdt[1] = -sqrt(3)*z*w + k*x*(sqrt(2)*x + sqrt(1.5)*a2*z) - w*chi;
+        dxdt[2] = -sqrt(3)*z*y - (1./(sqrt(3)*c*c))*(1-z*z) - y*chi;
+        dxdt[3] = (1./sqrt(3))*(1-z*z)*(z*y - qbar);
+
+        // plot psi and phi for the plots.
+        // i.e. plot xin[0] and xin[1]
+
+
+
+
+
+
+
+
         // dxdt[0] = x*(-2 + 2*x*x - y*y - z*z) + c*m_par*z*z;
         // dxdt[1] = y*(1 + 2*x*x - y*y - z*z);
         // dxdt[2] = z*(-c*m_par*x + 2*x*x + 1 - y*y - z*z);
@@ -236,9 +262,9 @@ public:
 
 
         // lorenz
-        dxdt[0] = 10.*(y - x);
-        dxdt[1] = x*(28. - z) - y;
-        dxdt[2] = x*y - (8./3.)*z;
+        // dxdt[0] = 10.*(y - x);<
+        // dxdt[1] = x*(28. - z) - y;
+        // dxdt[2] = x*y - (8./3.)*z;>
     }
 
     public:
@@ -246,6 +272,10 @@ public:
 
 };
 
+
+inline double init_y(double psi, double phi, double c) {
+    return sqrt(1-phi*phi - psi*psi)/c;
+}
 
 
 
@@ -272,7 +302,7 @@ int main(int argc, char** argv ){
     // t       : stores time values of the solution. (for autonomous systems, isn't useful)
     // y       : matrix containing solutions for all N coordinates
     // stepper : numerical method used to integrate the ODE
-    std::vector<double> x(3);
+    std::vector<double> x(4);
     std::vector<double> t, xc, yc, inflx, infly, t2;
     std::vector<std::vector<double> > y, y2, transposed;
     boost::numeric::odeint::runge_kutta_dopri5<std::vector<double> > stepper;
@@ -428,7 +458,14 @@ int main(int argc, char** argv ){
 
     generate_random_annulus(xc,yc,xcenter,ycenter,r,dr,tmax,numinit);
 
+    std::vector<double> phi_init(10),psi_init(10),y_init(10);
 
+    for (int i=0; i < 10; i++) {
+        phi_init[i] = 0.2;
+        psi_init[i] = -sqrt(1 - 0.3*0.3) + 2*sqrt(1 - 0.3*0.3)*i/10 + 0.001;
+        y_init[i] = init_y(psi_init[i],phi_init[i],1);
+    }
+    
 
     // GLfloat mat_specular[] = {1.0,1.0,1.0,1.0};
 
@@ -567,7 +604,7 @@ int main(int argc, char** argv ){
             glMatrixMode(GL_MODELVIEW);
             glLoadIdentity();
             glTranslatef(-gui_camera_dist_x,-gui_camera_dist_y,-gui_camera_dist);
-            glRotatef(90.,1.,0.,0.); // this rotates to put XY plane into perspective
+            glRotatef(180.,1.,0.,0.); // this rotates to put XY plane into perspective
             glRotatef(360.,0.,1.,0.);
             glRotatef(360.,0.,0.,1.);
 
@@ -594,7 +631,7 @@ int main(int argc, char** argv ){
             lambda = 2.3; // scalar field parameter. can be fixed or change through the q loop. if fixed, q loop will be optimized away.
             // plt.mainwindow.clear(sf::Color::Black);
             // Numerically solve and draw lines...
-            for (int j = 0; j < xc.size(); j++) {
+            for (int j = 0; j < phi_init.size(); j++) {
                 
                 // System to solve!
                 dynamical_system test(lambda,5.,5.); 
@@ -603,9 +640,9 @@ int main(int argc, char** argv ){
                 // int j = 0;
                 //FORWARD TIME INTEGRATION.
                 // INITIAL CONDITIONS SET FROM VECTORS DEFINED ABOVE
-                x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.2; x[3]=0;// This line defines randomly generated initial conditions 
+                x[0] = phi_init[j]; x[1] = psi_init[j]; x[2] = y_init[j]; x[3]=1.;// This line defines randomly generated initial conditions 
                 // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
-                boost::numeric::odeint::integrate_const(stepper,test, x, mintime,maxtime,dt,push_back_state_and_time(y,t));
+                boost::numeric::odeint::integrate_adaptive(stepper,test, x, mintime,maxtime,dt,push_back_state_and_time(y,t));
                 // glViewport(0,0,mainwin.getSize().x,mainwin.getSize().y/2);
                 // DrawLine2(y,t);
                 // glPushMatrix();
@@ -639,17 +676,17 @@ int main(int argc, char** argv ){
                 // plt.mainwindow.setActive(false);
                 // }
 
-                int kmax = y.size()-1;
+                int kmax = y.size();
 
-                int iter = jstep % kmax;
-                jstep++;
-                std::cout << iter << std::endl;
+                // int iter = jstep % kmax;
+                // jstep++;
+                // std::cout << iter << std::endl;
                 glBegin(GL_LINE_STRIP);
-                    for (int i = 0; i < iter; i++) {
+                    for (int i = 0; i < kmax; i++) {
                         xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
                         // if (2*xp*xp - yp*yp - zp*zp < 0)
                         // {
-                            glColor3f(0.2, 0.5, (float)j);    
+                            glColor3f(0.8, 0.2, 0.949);    
                             glVertex3f(xp, yp, zp);
                         // }
                         // else 
@@ -660,50 +697,50 @@ int main(int argc, char** argv ){
                         // }
                     }
                 glEnd();
-                glBegin(GL_POINTS);
-                    int kk = y.size()-1;
-                    kk = iter;
-                    xp = y[kk][0]; yp = y[kk][1]; zp = y[kk][2]; 
-                    glColor3f(1,0,0);
-                    glPointSize(100);
-                    glVertex3f(xp,yp,zp);
-                    glPointSize(1);
-                glEnd();
+                // glBegi<n(GL_POINTS);
+                //     int kk = y.size()-1;
+                //     kk = iter;
+                //     xp = y[kk][0]; yp = y[kk][1]; zp = y[kk][2]; 
+                //     glColor3f(1,0,0);
+                //     glPointSize(100);
+                //     glVertex3f(xp,yp,zp);
+                //     glPointSize(1);
+                // glEnd();>
                 y.clear(); t.clear();
 
 
-                // x[0] = xc[j]; x[1] = yc[j]; x[2] = 0.2; x[3] = 0; // This line defines randomly generated initial conditions 
-                // // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
-                // // DRAWS BACKWARD SOLUTION
-                // boost::numeric::odeint::integrate_const(stepper,test, x, mintime,-maxtime,-dt,push_back_state_and_time(y,t));
-            //     // if (plt.mainwindow.isOpen()) {
-            //     // plt.mainwindow.setActive(true);
-            //     // plt.plot(t,transpose_copy(y)[0]);
-            //     // plt.plot(t,transpose_copy(y)[1],sf::Color::Green);
-            //     // plt.plot(t,transpose_copy(y)[2],sf::Color::Red);
-            //     // plt.plot(t,transpose_copy(y)[3],sf::Color::Magenta);
-            //     // plt.mainwindow.setActive(false);
-            //     // }
+                x[0] = phi_init[j]; x[1] = psi_init[j]; x[2] = y_init[j]; x[3]=1.; // This line defines randomly generated initial conditions 
+                // x[0] = xt[j]; x[1] = yt[j]; x[2] = zt[j];
+                // DRAWS BACKWARD SOLUTION
+                boost::numeric::odeint::integrate_adaptive(stepper,test, x, mintime,-maxtime,-dt,push_back_state_and_time(y,t));
+                // if (plt.mainwindow.isOpen()) {
+                // plt.mainwindow.setActive(true);
+                // plt.plot(t,transpose_copy(y)[0]);
+                // plt.plot(t,transpose_copy(y)[1],sf::Color::Green);
+                // plt.plot(t,transpose_copy(y)[2],sf::Color::Red);
+                // plt.plot(t,transpose_copy(y)[3],sf::Color::Magenta);
+                // plt.mainwindow.setActive(false);
+                // }
 
-            //     // glViewport(mainwin.getSize().x/2,mainwin.getSize().y/2,mainwin.getSize().x/2,mainwin.getSize().y/2);
-            //     // mainwin.setActive(true);
+                // glViewport(mainwin.getSize().x/2,mainwin.getSize().y/2,mainwin.getSize().x/2,mainwin.getSize().y/2);
+                // mainwin.setActive(true);
                 // Draw solution curves in 3D phase space.
-                // glBegin(GL_LINE_STRIP);
-                //     for (int i = 0; i < y.size(); i++) {
-                //         xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
-                //         // if (2*xp*xp - yp*yp - zp*zp < 0)
-                //         // {
-                //             glColor3f(0.109, 0.894, 0.949);    
-                //             glVertex3f(xp,yp,zp);
-                //         // }
-                //         // else 
-                //         // {
-                //             // glColor3f(0.603,0.196,0.6);
-                //             // // glColor3f(0,0,1);
-                //             // glVertex3f(xp, yp, zp);
-                //         // }
-                //     }
-                // glEnd();
+                glBegin(GL_LINE_STRIP);
+                    for (int i = 0; i < y.size(); i++) {
+                        xp = y[i][0]; yp = y[i][1]; zp = y[i][2]; //placeholders for readability
+                        // if (2*xp*xp - yp*yp - zp*zp < 0)
+                        // {
+                            glColor3f(0.109, 0.894, 0.949);    
+                            glVertex3f(xp,yp,zp);
+                        // }
+                        // else 
+                        // {
+                            // glColor3f(0.603,0.196,0.6);
+                            // // glColor3f(0,0,1);
+                            // glVertex3f(xp, yp, zp);
+                        // }
+                    }
+                glEnd();
 
             //     // glBegin(GL_POINTS);
             //     //     glColor3f(1,0,0);
@@ -714,7 +751,7 @@ int main(int argc, char** argv ){
             //     // glEnd();
 
             //     // delete current solution curve to prepare for the next one...
-            //     y.clear(); t.clear();
+                y.clear(); t.clear();
             //     // mainwin.setActive(false);
             } // end j loop
             // plt.show();
